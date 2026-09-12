@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { ActiveMode } from "../types";
-import marhabaLogo from "../imports/2177178-removebg-preview__1_.png";
+import marhabaLogo from "../imports/marhaba-logo.png";
 
 // Hardcoded so the link is always valid even before useAppSettings loads
 const WA_ACCESSORY_LINK = "https://wa.me/966500816798?text=" + encodeURIComponent("أرغب في طلب اكسسوار لمنصة Marhaba NFC");
