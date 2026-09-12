@@ -12,7 +12,7 @@ import PrivacyPolicyScreen from "./components/PrivacyPolicyScreen";
 import BottomNav from "./components/BottomNav";
 import PasswordInputDemo from "./components/PasswordInputDemo";
 import CardScanScreen from "./components/CardScanScreen";
-import marhabaLogo from "./imports/2177178-removebg-preview__1_.png";
+import marhabaLogo from "./imports/marhaba-logo.png";
 
 const appScreens = ["home", "emergency", "business", "events", "accessory", "settings"];
 
