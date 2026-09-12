@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useApp } from "../context/AppContext";
-import marhabaLogo from "../imports/2177178-removebg-preview__1_.png";
+import marhabaLogo from "../imports/marhaba-logo.png";
 import { ActiveMode, Identity } from "../types";
 import ShareModal from "./ShareModal";
 import { renameIdentity } from "../lib/db";
