@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { lookupSerial, SerialRecord, linkSerialToIdentity } from "../lib/db";
-import marhabaLogo from "../imports/2177178-removebg-preview__1_.png";
+import marhabaLogo from "../imports/marhaba-logo.png";
 
 type Phase =
   | "input"           // waiting for serial entry
