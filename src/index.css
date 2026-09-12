@@ -1,1 +1,299 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+@import 'tailwindcss';
+
+:root {
+  --background: #09090f;
+  --foreground: #f0f0f5;
+  --card: #111118;
+  --card-elevated: #1a1a26;
+  --card-foreground: #f0f0f5;
+  --primary: #c9a84c;
+  --primary-light: #e5c76b;
+  --primary-foreground: #09090f;
+  --secondary: #1e1e2e;
+  --secondary-foreground: #a0a0b8;
+  --muted: #1a1a26;
+  --muted-foreground: #7070a0;
+  --accent: #c9a84c;
+  --accent-foreground: #09090f;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --ring: #c9a84c;
+  --radius: 14px;
+  --emergency: #e53e3e;
+  --business: #c9a84c;
+  --events: #9b59b6;
+  --nav-bg: rgba(9, 9, 15, 0.95);
+  --input-bg: #1a1a26;
+  --select-bg: #1a1a26;
+  --shadow: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="light"] {
+  --background: #f4f4f8;
+  --foreground: #0f0f18;
+  --card: #ffffff;
+  --card-elevated: #ededf5;
+  --card-foreground: #0f0f18;
+  --primary: #c9a84c;
+  --primary-light: #d4af37;
+  --primary-foreground: #ffffff;
+  --secondary: #e8e8f0;
+  --secondary-foreground: #4a4a6a;
+  --muted: #e8e8f0;
+  --muted-foreground: #6a6a8a;
+  --accent: #c9a84c;
+  --accent-foreground: #ffffff;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.14);
+  --ring: #c9a84c;
+  --emergency: #c0392b;
+  --business: #b8960e;
+  --events: #7d3c98;
+  --nav-bg: rgba(244, 244, 248, 0.97);
+  --input-bg: #ffffff;
+  --select-bg: #ffffff;
+  --shadow: rgba(0, 0, 0, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
+}
+
+:root { color-scheme: dark; }
+[data-theme="light"] { color-scheme: light; }
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  background: var(--background);
+}
+
+body {
+  font-family: 'DM Sans', 'Tajawal', system-ui, sans-serif;
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  text-rendering: optimizeLegibility;
+}
+
+/* ── Arabic / RTL global fixes ─────────────────────────────────────────────────
+   letter-spacing MUST be 0 for Arabic — any non-zero value breaks ligatures
+   and causes letters to appear disconnected (حروف منفردة).
+   font-feature-settings enables Arabic contextual alternates and ligatures.
+   unicode-bidi ensures inline content respects the RTL base direction.
+───────────────────────────────────────────────────────────────────────────── */
+html[dir="rtl"],
+html[dir="rtl"] body,
+html[dir="rtl"] * {
+  font-family: 'Tajawal', system-ui, 'Arial Unicode MS', sans-serif;
+  letter-spacing: 0 !important;
+  word-spacing: normal;
+  font-feature-settings: "liga" 1, "calt" 1, "kern" 1;
+  -webkit-font-feature-settings: "liga" 1, "calt" 1, "kern" 1;
+}
+
+html[dir="rtl"] p,
+html[dir="rtl"] span,
+html[dir="rtl"] h1,
+html[dir="rtl"] h2,
+html[dir="rtl"] h3,
+html[dir="rtl"] h4,
+html[dir="rtl"] label,
+html[dir="rtl"] button,
+html[dir="rtl"] input,
+html[dir="rtl"] textarea {
+  direction: rtl;
+  unicode-bidi: plaintext;
+  text-align: start;
+}
+
+html[dir="ltr"],
+html[dir="ltr"] body,
+html[dir="ltr"] * {
+  font-family: 'DM Sans', 'Tajawal', system-ui, sans-serif;
+}
+
+/* Force monospace fields back to LTR regardless of page direction */
+input[style*="monospace"],
+[data-dir="ltr"],
+.ltr-override {
+  direction: ltr !important;
+  unicode-bidi: bidi-override;
+  letter-spacing: normal !important;
+}
+
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+input, textarea, select {
+  background: var(--input-bg);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  color: var(--foreground);
+  padding: 12px 14px;
+  width: 100%;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+  /* Allow browser to pick correct direction per field content */
+  unicode-bidi: plaintext;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--primary);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--muted-foreground);
+}
+
+select option {
+  background: var(--card-elevated);
+  color: var(--foreground);
+}
+
+.app-shell {
+  width: 100%;
+  height: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--background);
+  position: relative;
+  overflow: hidden;
+}
+
+.screen {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 80px;
+}
+
+.screen::-webkit-scrollbar {
+  display: none;
+}
+
+.gold-gradient {
+  background: linear-gradient(135deg, #c9a84c, #e5c76b, #a88328);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gold-bg {
+  background: linear-gradient(135deg, #c9a84c, #d4af37);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.card-elevated {
+  background: var(--card-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #c9a84c, #d4af37);
+  color: #09090f;
+  font-weight: 700;
+  border-radius: 12px;
+  padding: 14px 24px;
+  width: 100%;
+  font-size: 15px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  font-family: inherit;
+}
+
+.btn-primary:active {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  background: var(--card-elevated);
+  color: var(--foreground);
+  font-weight: 500;
+  border-radius: 12px;
+  padding: 14px 24px;
+  width: 100%;
+  font-size: 15px;
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+  transition: opacity 0.2s;
+  font-family: inherit;
+}
+
+.btn-secondary:active {
+  opacity: 0.7;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted-foreground);
+  font-weight: 500;
+  border-radius: 12px;
+  padding: 14px 24px;
+  width: 100%;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+  font-family: inherit;
+}
+
+.btn-ghost:hover {
+  color: var(--foreground);
+}
+
+.mode-badge-business {
+  background: rgba(201, 168, 76, 0.15);
+  color: #c9a84c;
+  border: 1px solid rgba(201, 168, 76, 0.3);
+}
+
+.mode-badge-emergency {
+  background: rgba(229, 62, 62, 0.15);
+  color: #e53e3e;
+  border: 1px solid rgba(229, 62, 62, 0.3);
+}
+
+.mode-badge-events {
+  background: rgba(155, 89, 182, 0.15);
+  color: #9b59b6;
+  border: 1px solid rgba(155, 89, 182, 0.3);
+}
+
+.fade-in {
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
