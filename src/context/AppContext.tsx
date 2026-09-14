@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Language, Screen, Identity, User, ActiveMode } from "../types";
-import { translations, TKey } from "../i18n";
+import { translations} from "../i18n";
+<div styleName={} />
 import { supabase } from "../lib/supabase";
 import {
   loadUserIdentities, createIdentity, updateIdentityMode as dbUpdateMode,
