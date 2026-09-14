@@ -1,17 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
-import { projectId, publicAnonKey } from "../../utils/supabase/info";
+import { createClient } from '@supabase/supabase-js';
 
-// Singleton — module is evaluated once; import from anywhere without re-creating the client.
-export const supabase = createClient(
-  `https://${projectId}.supabase.co`,
-  publicAnonKey,
-  {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true,
-    },
-  },
-);
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-export const EDGE_BASE = `https://${projectId}.supabase.co/functions/v1/server/make-server-493add5a`;
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
