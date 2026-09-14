@@ -160,7 +160,9 @@ function SOSButton({ contacts, lang }: { contacts: any[]; lang: string }) {
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
 
   const handleSOS = () => {
-    const firstVisible = contacts.find((c) => c.visible && c.phone);
+    const firstVisible = contacts && contacts.length > 0 ? contacts[0] : null;
+
+
     if (!firstVisible) {
       setStatus("error");
       setTimeout(() => setStatus("idle"), 3000);
