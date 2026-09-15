@@ -524,3 +524,32 @@ export async function claimCard(
 
   return true;
 }
+// ─── Public identity lookup (no auth required — for NFC card readers) ────────
+
+export async function loadPublicIdentityBySerial(serial: string): Promise<Identity | null> {
+  const lookup = await lookupSerial(serial);
+  if (lookup.status !== "linked" || !lookup.record.identity_id) return null;
+
+  const identityId = lookup.record.identity_id;
+
+  const [idRow, emRow, emContacts, bizRow, evRow] = await Promise.all([
+    supabase.from("identities").select("*").eq("id", identityId).maybeSingle(),
+    supabase.from("emergency_data").select("*").eq("identity_id", identityId).maybeSingle(),
+    supabase.from("emergency_contacts").select("*").eq("identity_id", identityId).order("sort_order"),
+    supabase.from("business_data").select("*").eq("identity_id", identityId).maybeSingle(),
+    supabase.from("events_data").select("*").eq("identity_id", identityId).maybeSingle(),
+  ]);
+
+  if (!idRow.data) return null;
+
+  return {
+    id: identityId,
+    serialNumber: lookup.record.serial_number,
+    activeMode: (idRow.data.active_mode as ActiveMode) || "business",
+    isActive: idRow.data.is_active ?? true,
+    emergency: emRow.data ? mapEmergencyFromDB(emRow.data, emContacts.data || []) : defaultEmergency(),
+    business: bizRow.data ? mapBusinessFromDB(bizRow.data) : defaultBusiness(),
+    events: evRow.data ? mapEventsFromDB(evRow.data) : defaultEvents(),
+    offlineSettings: defaultOffline(),
+  };
+}
