@@ -216,13 +216,16 @@ export async function deleteIdentityFromDB(identityId: string) {
 }
 
 // ─── Data saves ──────────────────────────────────────────────────────────────
+// ملاحظة مهمة: onConflict: "identity_id" ضروري لأن upsert بشكل افتراضي
+// يعتمد على المفتاح الأساسي (id) للتعارض، وليس على identity_id. بدونها
+// كانت عملية الحفظ تفشل بصمت وتترك الصف الأصلي (الفارغ) دون تحديث.
 
 export async function saveEmergencyData(identityId: string, data: EmergencyData) {
   const row = mapEmergencyToDB(data);
 
   const { error } = await supabase
     .from("emergency_data")
-    .upsert({ ...row, identity_id: identityId });
+    .upsert({ ...row, identity_id: identityId }, { onConflict: "identity_id" });
 
   if (error) return;
 
@@ -246,13 +249,13 @@ export async function saveEmergencyData(identityId: string, data: EmergencyData)
 export async function saveBusinessData(identityId: string, data: BusinessData) {
   await supabase
     .from("business_data")
-    .upsert({ ...mapBusinessToDB(data), identity_id: identityId });
+    .upsert({ ...mapBusinessToDB(data), identity_id: identityId }, { onConflict: "identity_id" });
 }
 
 export async function saveEventsData(identityId: string, data: EventsData) {
   await supabase
     .from("events_data")
-    .upsert({ ...mapEventsToDB(data), identity_id: identityId });
+    .upsert({ ...mapEventsToDB(data), identity_id: identityId }, { onConflict: "identity_id" });
 }
 
 export async function saveOfflinePreferences(identityId: string, prefs: OfflineSettings) {
@@ -264,7 +267,7 @@ export async function saveOfflinePreferences(identityId: string, prefs: OfflineS
       show_contact_phone: prefs.contactPhone,
       show_emergency_phone: prefs.emergencyPhone,
       updated_at: new Date().toISOString(),
-    });
+    }, { onConflict: "identity_id" });
 }
 
 // ─── Serial inventory ─────────────────────────────────────────────────────────
@@ -524,6 +527,7 @@ export async function claimCard(
 
   return true;
 }
+
 // ─── Public identity lookup (no auth required — for NFC card readers) ────────
 
 export async function loadPublicIdentityBySerial(serial: string): Promise<Identity | null> {
