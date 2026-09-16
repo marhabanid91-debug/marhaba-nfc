@@ -73,9 +73,13 @@ function SaveContactBtn({ onClick, lang }: { onClick: () => void; lang: string }
   );
 }
 
-export default function ReaderView({ mode }: { mode: ActiveMode }) {
+export default function ReaderView({ mode: defaultMode }: { mode?: ActiveMode }) {
   const { identities, activeIdentityId, setScreen, lang } = useApp();
   const identity = identities.find((i) => i.id === activeIdentityId) || identities[0];
+
+  // الاعتماد على الوضع النشط المخزن في قاعدة البيانات للهوية، والرجوع للافتراضي عند اللزوم
+  const mode: ActiveMode = identity?.activeMode || defaultMode || "business";
+
   const color = modeColors[mode];
   const appUrl = "https://marhaba.com";
 
@@ -161,7 +165,6 @@ function SOSButton({ contacts, lang }: { contacts: any[]; lang: string }) {
 
   const handleSOS = () => {
     const firstVisible = contacts && contacts.length > 0 ? contacts[0] : null;
-
 
     if (!firstVisible) {
       setStatus("error");
@@ -486,4 +489,3 @@ function ContactRow({ icon, value, href }: { icon: string; value: string; href?:
     <a href={href} style={{ textDecoration: "none", color: "var(--foreground)", display: "block" }}>{content}</a>
   ) : content;
 }
-
