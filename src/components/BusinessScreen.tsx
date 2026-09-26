@@ -1,3 +1,4 @@
+import CountryPhoneInput from "./CountryPhoneInput";
 import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext";
 import { SocialLinks } from "../types";
@@ -168,7 +169,19 @@ export default function BusinessScreen() {
           <F label={t("jobTitle")} value={form.jobTitle} onChange={(v) => setForm({ ...form, jobTitle: v })} placeholder={t("enterJobTitle")} />
           <F label={t("company")} value={form.company} onChange={(v) => setForm({ ...form, company: v })} placeholder={t("enterCompany")} />
           <F label={t("bio")} value={form.bio} onChange={(v) => setForm({ ...form, bio: v })} placeholder={t("enterBio")} multiline optional />
-          <F label={t("phone")} value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder={t("enterPhone")} type="tel" optional />
+          <div>
+  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+    <label style={{ fontSize: 13, color: "var(--muted-foreground)" }}>{t("phone")}</label>
+    <span style={{ fontSize: 11, color: "var(--muted-foreground)", opacity: 0.6 }}>
+      {lang === "ar" ? "اختياري" : "Optional"}
+    </span>
+  </div>
+  <CountryPhoneInput
+    value={form.phone}
+    onChange={(fullPhone) => setForm({ ...form, phone: fullPhone })}
+    lang={lang}
+  />
+</div>
           <F label={t("email")} value={form.email} onChange={(v) => setForm({ ...form, email: v })} placeholder={t("enterEmail")} type="email" optional />
           <F label={t("website")} value={form.website} onChange={(v) => setForm({ ...form, website: v })} placeholder="https://yoursite.com" type="url" optional />
           <F label={t("location")} value={form.location} onChange={(v) => setForm({ ...form, location: v })} placeholder={t("enterLocation")} optional />
