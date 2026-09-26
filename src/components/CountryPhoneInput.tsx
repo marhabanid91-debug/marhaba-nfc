@@ -118,3 +118,72 @@ export default function CountryPhoneInput({ value, onChange, lang, placeholder }
 
   return (
     <div ref={wrapRef} style={{ position: "relative", width: "100%" }}>
+      <div style={{
+        display: "flex", alignItems: "stretch", gap: 8,
+        background: "var(--card)", border: "1px solid var(--border-strong, rgba(255,255,255,0.1))",
+        borderRadius: 12, overflow: "visible",
+      }}>
+        {/* Country selector button */}
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "0 10px", border: "none", background: "transparent",
+            color: "var(--foreground)", fontSize: 14, cursor: "pointer",
+            fontFamily: "inherit", borderInlineEnd: "1px solid var(--border-strong, rgba(255,255,255,0.1))",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <span style={{ fontSize: 18 }}>{flagEmoji(country.code)}</span>
+          <span data-dir="ltr" style={{ fontWeight: 700 }}>+{country.dialCode}</span>
+          <span style={{ fontSize: 10, opacity: 0.6 }}>▾</span>
+        </button>
+
+        {/* Local number input */}
+        <input
+          type="tel"
+          inputMode="numeric"
+          value={localNumber}
+          onChange={(e) => handleLocalChange(e.target.value)}
+          placeholder={placeholder || (isAr ? "5xxxxxxxx" : "5xxxxxxxx")}
+          data-dir="ltr"
+          style={{
+            flex: 1, border: "none", background: "transparent", outline: "none",
+            padding: "13px 12px", fontSize: 15, color: "var(--foreground)",
+            fontFamily: "inherit", minWidth: 0,
+          }}
+        />
+      </div>
+
+      {/* Dropdown list */}
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 6px)", insetInlineStart: 0,
+          width: 260, maxHeight: 280, overflowY: "auto", zIndex: 50,
+          background: "var(--card-elevated, var(--card))", border: "1px solid var(--border-strong, rgba(255,255,255,0.15))",
+          borderRadius: 14, boxShadow: "0 12px 32px rgba(0,0,0,0.35)", padding: 6,
+        }}>
+          {COUNTRIES.map((c) => (
+            <button
+              key={c.code}
+              type="button"
+              onClick={() => pickCountry(c)}
+              style={{
+                width: "100%", display: "flex", alignItems: "center", gap: 10,
+                padding: "9px 10px", border: "none", borderRadius: 10,
+                background: c.code === country.code ? "rgba(201,168,76,0.12)" : "transparent",
+                color: "var(--foreground)", fontSize: 14, cursor: "pointer",
+                textAlign: isAr ? "right" : "left", fontFamily: "inherit",
+              }}
+            >
+              <span style={{ fontSize: 18 }}>{flagEmoji(c.code)}</span>
+              <span style={{ flex: 1 }}>{isAr ? c.nameAr : c.name}</span>
+              <span data-dir="ltr" style={{ opacity: 0.6, fontSize: 12 }}>+{c.dialCode}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
