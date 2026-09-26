@@ -1,3 +1,4 @@
+import CountryPhoneInput from "./CountryPhoneInput";
 import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext";
 import { EmergencyContact, EmergencyVisibility } from "../types";
@@ -306,7 +307,11 @@ export default function EmergencyScreen() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <input value={c.name} onChange={(e) => updateContact(i, "name", e.target.value)} placeholder={t("contactName")} />
-                  <input value={c.phone} onChange={(e) => updateContact(i, "phone", e.target.value)} placeholder={t("contactPhone")} type="tel" />
+                  <CountryPhoneInput
+  value={c.phone}
+  onChange={(fullPhone) => updateContact(i, "phone", fullPhone)}
+  lang={lang}
+/>
                   <input value={c.relationship} onChange={(e) => updateContact(i, "relationship", e.target.value)} placeholder={t("contactRelationship")} />
                 </div>
               </div>
