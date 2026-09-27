@@ -74,7 +74,7 @@ function SaveContactBtn({ onClick, lang }: { onClick: () => void; lang: string }
 }
 
 export default function ReaderView({ mode: defaultMode }: { mode?: ActiveMode }) {
-  const { identities, activeIdentityId, setScreen, lang } = useApp();
+  const { identities, activeIdentityId, setScreen, lang, supabaseUser } = useApp();
   const identity = identities.find((i) => i.id === activeIdentityId) || identities[0];
 
   // الاعتماد على الوضع النشط المخزن في قاعدة البيانات للهوية، والرجوع للافتراضي عند اللزوم
@@ -91,13 +91,17 @@ export default function ReaderView({ mode: defaultMode }: { mode?: ActiveMode })
         justifyContent: "space-between", alignItems: "center",
         borderBottom: "1px solid var(--border)",
       }}>
-        <button onClick={() => setScreen("home")} style={{
-          background: "none", border: "none", color: "var(--muted-foreground)",
-          cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 6,
-          fontFamily: "inherit",
-        }}>
-          {lang === "ar" ? "→ رجوع" : "← Back"}
-        </button>
+      {supabaseUser ? (
+  <button onClick={() => setScreen("home")} style={{
+    background: "none", border: "none", color: "var(--muted-foreground)",
+    cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 6,
+    fontFamily: "inherit",
+  }}>
+    {lang === "ar" ? "→ رجوع" : "← Back"}
+  </button>
+) : (
+  <div style={{ width: 60 }} />
+)}
         <img src={marhabaLogo} alt="مرحبا NFC" style={{ width: 40, height: "auto" }} />
         <div style={{
           padding: "4px 12px", borderRadius: 20,
