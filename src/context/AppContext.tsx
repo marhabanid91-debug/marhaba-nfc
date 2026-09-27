@@ -51,6 +51,7 @@ interface AppContextType {
   disclaimerAcknowledged: boolean;
   setDisclaimerAcknowledged: (v: boolean) => void;
   dbLoading: boolean;
+  initializing: boolean;
   supabaseUser: any;
   isAdmin: boolean;
   pendingSerial: SerialRecord | null;
@@ -74,6 +75,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [activeIdentityId, setActiveIdentityId] = useState<string | null>(null);
   const [readerPreviewMode, setReaderPreviewMode] = useState<ActiveMode>("business");
   const [dbLoading, setDbLoading] = useState(false);
+  // Gate that hides the card-scan welcome screen from ever flashing on
+  // startup — while true, App.tsx renders a plain loading spinner instead,
+  // whether we're resolving a scanned serial or just checking the session.
+  const [initializing, setInitializing] = useState(true);
   const [disclaimerAcknowledged, setDisclaimerAcknowledgedState] = useState<boolean>(() =>
     localStorage.getItem("marhaba-disclaimer") === "true"
   );
@@ -123,14 +128,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         } else {
           setScreenState("auth");
         }
+        setInitializing(false);
       }).catch(() => {
         setScreenState("auth");
+        setInitializing(false);
       });
       return;
     }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) setScreenState("auth");
+      if (!session) {
+        setScreenState("auth");
+        setInitializing(false);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -179,6 +189,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
           setScreenState("home");
         }
+        setInitializing(false);
       } else {
         setSupabaseUser(null);
         setUser(null);
@@ -186,6 +197,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setIdentities([]);
         setActiveIdentityId(null);
         setScreenState("auth");
+        setInitializing(false);
       }
     });
 
@@ -250,7 +262,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         readerPreviewMode, setReaderPreviewMode,
         darkMode, setDarkMode,
         disclaimerAcknowledged, setDisclaimerAcknowledged,
-        dbLoading, supabaseUser, isAdmin, pendingSerial, setPendingSerial,
+        dbLoading, initializing, supabaseUser, isAdmin, pendingSerial, setPendingSerial,
         authMode, setAuthMode,
       }}
     >
