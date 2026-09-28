@@ -81,7 +81,7 @@ export default function ReaderView({ mode: defaultMode }: { mode?: ActiveMode })
   const mode: ActiveMode = identity?.activeMode || defaultMode || "business";
 
   const color = modeColors[mode];
-  const appUrl = "https://marhaba.com";
+  const appUrl = "https://marhabanid.com";
 
   return (
     <div style={{ minHeight: "100%", background: "var(--background)" }}>
@@ -91,17 +91,18 @@ export default function ReaderView({ mode: defaultMode }: { mode?: ActiveMode })
         justifyContent: "space-between", alignItems: "center",
         borderBottom: "1px solid var(--border)",
       }}>
-      {supabaseUser ? (
-  <button onClick={() => setScreen("home")} style={{
-    background: "none", border: "none", color: "var(--muted-foreground)",
-    cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 6,
-    fontFamily: "inherit",
-  }}>
-    {lang === "ar" ? "→ رجوع" : "← Back"}
-  </button>
-) : (
-  <div style={{ width: 60 }} />
-)}
+        {/* زر الرجوع يظهر فقط للمستخدم المسجل دخول */}
+        {supabaseUser ? (
+          <button onClick={() => setScreen("home")} style={{
+            background: "none", border: "none", color: "var(--muted-foreground)",
+            cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 6,
+            fontFamily: "inherit",
+          }}>
+            {lang === "ar" ? "→ رجوع" : "← Back"}
+          </button>
+        ) : (
+          <div style={{ width: 60 }} />
+        )}
         <img src={marhabaLogo} alt="مرحبا NFC" style={{ width: 40, height: "auto" }} />
         <div style={{
           padding: "4px 12px", borderRadius: 20,
