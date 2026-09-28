@@ -14,7 +14,8 @@ export default function ShareModal({ identityName, serialNumber, onClose }: Shar
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState("");
 
-  const url = `https://marhaba.com/id/${serialNumber}`;
+  // الصيغة اللي يقرأها التطبيق: ?serial=
+  const url = `https://marhabanid.com/?serial=${encodeURIComponent(serialNumber)}`;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -156,4 +157,3 @@ export default function ShareModal({ identityName, serialNumber, onClose }: Shar
     </div>
   );
 }
-
