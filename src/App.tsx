@@ -33,6 +33,8 @@ function LoadingScreen() {
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
+}
+
 function AppShell() {
   const { screen, dbLoading, initializing } = useApp();
   const showNav = appScreens.includes(screen);
@@ -43,7 +45,6 @@ function AppShell() {
 
   if (dbLoading && screen === "home") {
     return <div className="app-shell"><LoadingScreen /></div>;
-  }
   }
 
   return (
@@ -74,4 +75,3 @@ export default function App() {
     </AppProvider>
   );
 }
-
