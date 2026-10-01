@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import {
   loadUserIdentities, createIdentity, updateIdentityMode as dbUpdateMode,
   updateIdentityActive, deleteIdentityFromDB, loadProfile, upsertProfile,
-  linkSerialToIdentity, SerialRecord, loadPublicIdentityBySerial,
+  linkSerialToIdentity, SerialRecord, loadPublicIdentityBySerial, lookupSerial,
 } from "../lib/db";
 
 const defaultVisibility = {
@@ -69,8 +69,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [supabaseUser, setSupabaseUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [pendingSerial, setPendingSerial] = useState<SerialRecord | null>(null);
-  const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [pendingSerial, setPendingSerial] = useState<SerialRecord | null>(() => {
+    const s = localStorage.getItem("pending_serial");
+    return s ? { serial_number: s, status: "available", identity_id: null } : null;
+  });
+  const [authMode, setAuthMode] = useState<"login" | "register">(
+    localStorage.getItem("pending_serial") ? "register" : "login"
+  );
   const [identities, setIdentities] = useState<Identity[]>([]);
   const [activeIdentityId, setActiveIdentityId] = useState<string | null>(null);
   const [readerPreviewMode, setReaderPreviewMode] = useState<ActiveMode>("business");
@@ -119,15 +124,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const serialFromUrl = params.get("serial");
 
     if (serialFromUrl) {
-      loadPublicIdentityBySerial(serialFromUrl).then((identity) => {
+      loadPublicIdentityBySerial(serialFromUrl).then(async (identity) => {
         if (identity) {
           setIdentities([identity]);
           setActiveIdentityId(identity.id);
           setReaderPreviewMode(identity.activeMode);
           setScreenState(`reader-${identity.activeMode}` as Screen);
-        } else {
-          setScreenState("auth");
+          setInitializing(false);
+          return;
         }
+        const lookup = await lookupSerial(serialFromUrl);
+        if (lookup.status === "available") {
+          localStorage.setItem("pending_serial", lookup.record.serial_number);
+          window.location.replace(window.location.pathname);
+          return;
+        }
+        setScreenState("auth");
         setInitializing(false);
       }).catch(() => {
         setScreenState("auth");
@@ -179,6 +191,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             setPendingSerial((pending) => {
               if (pending && loaded.length) {
                 linkSerialToIdentity(pending.serial_number, loaded[0].id, su.id).catch(() => {});
+                localStorage.removeItem("pending_serial");
               }
               return null;
             });
