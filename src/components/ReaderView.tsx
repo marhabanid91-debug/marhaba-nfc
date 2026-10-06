@@ -84,7 +84,17 @@ export default function ReaderView({ mode: defaultMode }: { mode?: ActiveMode })
   const appUrl = "https://marhabanid.com";
 
   return (
-    <div style={{ minHeight: "100%", background: "var(--background)" }}>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        overflowY: "auto",
+        overflowX: "hidden",
+        WebkitOverflowScrolling: "touch",
+        background: "var(--background)",
+        zIndex: 50,
+      }}
+    >
       {/* Header bar */}
       <div style={{
         padding: "12px 20px", display: "flex",
@@ -113,7 +123,7 @@ export default function ReaderView({ mode: defaultMode }: { mode?: ActiveMode })
         </div>
       </div>
 
-      <div style={{ padding: "0 20px 100px" }}>
+      <div style={{ padding: "0 20px calc(100px + env(safe-area-inset-bottom, 0px))" }}>
         {mode === "emergency" && <EmergencyReader identity={identity} color={color} />}
         {mode === "business" && <BusinessReader identity={identity} color={color} />}
         {mode === "events" && <EventsReader identity={identity} color={color} />}
