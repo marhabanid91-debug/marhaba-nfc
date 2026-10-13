@@ -45,6 +45,13 @@ export interface SocialLinks {
   website?: string;
 }
 
+// موقع محفوظ: اسم يختاره المستخدم + رابط خريطة أو عنوان وطني، مع مفتاح إظهار/إخفاء
+export interface LocationItem {
+  name: string;
+  value: string;
+  visible: boolean;
+}
+
 export interface EmergencyData {
   photo: string;
   name: string;
@@ -56,6 +63,7 @@ export interface EmergencyData {
   firstAidInstructions: string;
   emergencyContacts: EmergencyContact[];
   visibility: EmergencyVisibility;
+  locations?: LocationItem[];
 }
 
 export interface BusinessData {
@@ -69,6 +77,7 @@ export interface BusinessData {
   website: string;
   location: string;
   socialLinks: SocialLinks;
+  locations?: LocationItem[];
 }
 
 export type EventStatus = "sponsor" | "participant" | "visitor" | "";
@@ -82,6 +91,7 @@ export interface EventsData {
   status: EventStatus;
   ticketLink: string;
   socialLinks: SocialLinks;
+  locations?: LocationItem[];
 }
 
 export interface OfflineSettings {
