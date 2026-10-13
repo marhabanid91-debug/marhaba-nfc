@@ -1,7 +1,8 @@
 import CountryPhoneInput from "./CountryPhoneInput";
 import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext";
-import { EmergencyContact, EmergencyVisibility } from "../types";
+import { EmergencyContact, EmergencyVisibility, LocationItem } from "../types";
+import { LocationFields, cleanLocations } from "./LocationFields";
 import { saveEmergencyData, uploadIdentityPhoto } from "../lib/db";
 
 const MAX_CONTACTS = 3;
@@ -30,6 +31,7 @@ export default function EmergencyScreen() {
   const [contacts, setContacts] = useState<EmergencyContact[]>(
     (data?.emergencyContacts || []).map((c) => ({ ...c, visible: c.visible ?? true }))
   );
+  const [locations, setLocations] = useState<LocationItem[]>(data?.locations || []);
   const [saved, setSaved] = useState(false);
 
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -64,7 +66,7 @@ export default function EmergencyScreen() {
   };
 
   const save = () => {
-    const updatedEmergency = { ...form, emergencyContacts: contacts, visibility };
+    const updatedEmergency = { ...form, emergencyContacts: contacts, visibility, locations: cleanLocations(locations) };
     setIdentities(identities.map((id) =>
       id.id === identity?.id
         ? { ...id, emergency: updatedEmergency }
@@ -262,6 +264,9 @@ export default function EmergencyScreen() {
             <textarea value={form.firstAidInstructions} onChange={(e) => setForm({ ...form, firstAidInstructions: e.target.value })} placeholder={t("enterFirstAid")} rows={2} style={{ resize: "none" }} />
           </FieldWithToggle>
 
+          {/* المواقع (حتى 3) */}
+          <LocationFields value={locations} onChange={setLocations} />
+
           {/* Emergency contacts */}
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
@@ -369,4 +374,3 @@ function SmallToggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
     </div>
   );
 }
-
