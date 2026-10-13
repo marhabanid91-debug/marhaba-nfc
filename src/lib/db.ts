@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 import {
   Identity, EmergencyData, BusinessData, EventsData,
   OfflineSettings, ActiveMode, EmergencyContact, EmergencyVisibility,
+  LocationItem,
 } from "../types";
 
 // ─── Mappers: DB (snake_case) ↔ Local (camelCase) ──────────────────────────
@@ -30,6 +31,7 @@ function mapEmergencyFromDB(row: any, contacts: any[]): EmergencyData {
       medications: row.show_medications ?? true,
       firstAidInstructions: row.show_first_aid ?? true,
     },
+    locations: (row.locations as LocationItem[]) || [],
   };
 }
 
@@ -49,6 +51,7 @@ function mapEmergencyToDB(data: EmergencyData) {
     show_allergies: data.visibility.allergies,
     show_medications: data.visibility.medications,
     show_first_aid: data.visibility.firstAidInstructions,
+    locations: data.locations || [],
     updated_at: new Date().toISOString(),
   };
 }
@@ -65,6 +68,7 @@ function mapBusinessFromDB(row: any): BusinessData {
     website: row.website || "",
     location: row.location || "",
     socialLinks: row.social_links || {},
+    locations: (row.locations as LocationItem[]) || [],
   };
 }
 
@@ -80,6 +84,7 @@ function mapBusinessToDB(data: BusinessData) {
     website: data.website || null,
     location: data.location || null,
     social_links: data.socialLinks || {},
+    locations: data.locations || [],
     updated_at: new Date().toISOString(),
   };
 }
@@ -94,6 +99,7 @@ function mapEventsFromDB(row: any): EventsData {
     status: row.status || "",
     ticketLink: row.ticket_link || "",
     socialLinks: row.social_links || {},
+    locations: (row.locations as LocationItem[]) || [],
   };
 }
 
@@ -107,6 +113,7 @@ function mapEventsToDB(data: EventsData) {
     status: data.status || null,
     ticket_link: data.ticketLink || null,
     social_links: data.socialLinks || {},
+    locations: data.locations || [],
     updated_at: new Date().toISOString(),
   };
 }
@@ -116,15 +123,16 @@ const defaultEmergency = (): EmergencyData => ({
   conditions: "", allergies: "", medications: "", firstAidInstructions: "",
   emergencyContacts: [],
   visibility: { birthDate: true, bloodType: true, conditions: true, allergies: true, medications: true, firstAidInstructions: true },
+  locations: [],
 });
 
 const defaultBusiness = (): BusinessData => ({
   photo: "", name: "", jobTitle: "", company: "", bio: "",
-  phone: "", email: "", website: "", location: "", socialLinks: {},
+  phone: "", email: "", website: "", location: "", socialLinks: {}, locations: [],
 });
 
 const defaultEvents = (): EventsData => ({
-  photo: "", name: "", bio: "", eventName: "", eventLocation: "", status: "", ticketLink: "", socialLinks: {},
+  photo: "", name: "", bio: "", eventName: "", eventLocation: "", status: "", ticketLink: "", socialLinks: {}, locations: [],
 });
 
 const defaultOffline = (): OfflineSettings => ({
