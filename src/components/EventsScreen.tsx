@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext";
-import { EventStatus, SocialLinks } from "../types";
+import { EventStatus, SocialLinks, LocationItem } from "../types";
+import { LocationFields, cleanLocations } from "./LocationFields";
 import { saveEventsData, uploadIdentityPhoto } from "../lib/db";
 
 const socialPlatforms: { key: keyof SocialLinks; label: string; icon: string; prefix: string; placeholder: string }[] = [
@@ -42,6 +43,7 @@ export default function EventsScreen() {
     ticketLink: data?.ticketLink || "",
   });
   const [socialLinks, setSocialLinks] = useState<SocialLinks>(data?.socialLinks || {});
+  const [locations, setLocations] = useState<LocationItem[]>(data?.locations || []);
   const [saved, setSaved] = useState(false);
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,7 +78,7 @@ export default function EventsScreen() {
       const raw = (socialLinks as any)[p.key] || "";
       if (raw) (normLinks as any)[p.key] = normaliseUrl(raw, p.prefix);
     }
-    const updatedEvents = { ...form, socialLinks: normLinks };
+    const updatedEvents = { ...form, socialLinks: normLinks, locations: cleanLocations(locations) };
     setIdentities(identities.map((id) =>
       id.id === identity?.id ? { ...id, events: updatedEvents } : id
     ));
@@ -192,6 +194,9 @@ export default function EventsScreen() {
 
           <F label={t("ticketLink")} value={form.ticketLink} onChange={(v) => setForm({ ...form, ticketLink: v })} placeholder="https://tickets.com/event" type="url" optional />
 
+          {/* المواقع (حتى 3) */}
+          <LocationFields value={locations} onChange={setLocations} />
+
           {/* Social links */}
           <div>
             <label style={{ fontSize: 13, color: "var(--muted-foreground)", display: "block", marginBottom: 4 }}>
@@ -250,4 +255,3 @@ function F({ label, value, onChange, placeholder, multiline, optional, type }: {
     </div>
   );
 }
-
