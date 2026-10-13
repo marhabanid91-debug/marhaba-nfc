@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { ActiveMode } from "../types";
 import marhabaLogo from "../imports/marhaba-logo.png";
+import { LocationCard } from "./LocationFields";
 
 // Hardcoded so the link is always valid even before useAppSettings loads
 const WA_ACCESSORY_LINK = "https://wa.me/966500816798?text=" + encodeURIComponent("أرغب في طلب اكسسوار لمنصة Marhaba NFC");
@@ -49,6 +50,24 @@ function downloadVCard(fields: {
   a.download = `${fn || "contact"}.vcf`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// دائرة الهوية: الصورة التي رفعها المستخدم، وإن لم توجد (أو فشل تحميلها) يظهر الرمز التعبيري
+function ReaderAvatar({ photo, emoji, color }: { photo?: string; emoji: string; color: string }) {
+  const [failed, setFailed] = useState(false);
+  const showPhoto = !!photo && !failed;
+  return (
+    <div style={{
+      width: 96, height: 96, borderRadius: "50%", margin: "0 auto 14px", overflow: "hidden",
+      background: `${color}20`, border: `2px solid ${color}50`,
+      display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40,
+    }}>
+      {showPhoto ? (
+        <img src={photo} alt="" onError={() => setFailed(true)}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      ) : emoji}
+    </div>
+  );
 }
 
 function SaveContactBtn({ onClick, lang }: { onClick: () => void; lang: string }) {
@@ -238,11 +257,7 @@ function EmergencyReader({ identity, color }: { identity: any; color: string }) 
         background: `linear-gradient(135deg, ${color}22, ${color}08)`,
         border: `1px solid ${color}30`, borderRadius: 18, padding: 24, margin: "20px 0", textAlign: "center",
       }}>
-        <div style={{
-          width: 80, height: 80, borderRadius: "50%", margin: "0 auto 14px",
-          background: `${color}20`, border: `2px solid ${color}50`,
-          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36,
-        }}>🚨</div>
+        <ReaderAvatar photo={d?.photo} emoji="🚨" color={color} />
         <h2 style={{ fontWeight: 800, fontSize: 22, margin: "0 0 4px" }}>{displayName}</h2>
         <div style={{ fontSize: 13, color, fontWeight: 600 }}>
           {lang === "ar" ? "بطاقة الطوارئ" : "Emergency Card"}
@@ -293,6 +308,8 @@ function EmergencyReader({ identity, color }: { identity: any; color: string }) 
         <div style={{ textAlign: "center", padding: "24px", color: "var(--muted-foreground)" }}>{noData}</div>
       )}
 
+      <LocationCard locations={d?.locations} />
+
       <SOSButton contacts={d?.emergencyContacts || []} lang={lang} />
 
       {/* Save Contact */}
@@ -321,11 +338,7 @@ function BusinessReader({ identity, color }: { identity: any; color: string }) {
         background: `linear-gradient(135deg, ${color}22, ${color}08)`,
         border: `1px solid ${color}30`, borderRadius: 18, padding: 24, margin: "20px 0", textAlign: "center",
       }}>
-        <div style={{
-          width: 80, height: 80, borderRadius: "50%", margin: "0 auto 14px",
-          background: `${color}20`, border: `2px solid ${color}50`,
-          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36,
-        }}>💼</div>
+        <ReaderAvatar photo={d?.photo} emoji="💼" color={color} />
         <h2 style={{ fontWeight: 800, fontSize: 22, margin: "0 0 4px" }}>{d?.name || noData}</h2>
         {d?.jobTitle && <div style={{ fontSize: 14, color, fontWeight: 600, marginBottom: 4 }}>{d.jobTitle}</div>}
         {d?.company && <div style={{ fontSize: 13, color: "var(--muted-foreground)" }}>{d.company}</div>}
@@ -365,6 +378,8 @@ function BusinessReader({ identity, color }: { identity: any; color: string }) {
         </div>
       )}
 
+      <LocationCard locations={d?.locations} />
+
       {/* Save Contact */}
       {d?.name && (
         <SaveContactBtn
@@ -400,11 +415,7 @@ function EventsReader({ identity, color }: { identity: any; color: string }) {
         background: `linear-gradient(135deg, ${color}22, ${color}08)`,
         border: `1px solid ${color}30`, borderRadius: 18, padding: 24, margin: "20px 0", textAlign: "center",
       }}>
-        <div style={{
-          width: 80, height: 80, borderRadius: "50%", margin: "0 auto 14px",
-          background: `${color}20`, border: `2px solid ${color}50`,
-          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36,
-        }}>🎪</div>
+        <ReaderAvatar photo={d?.photo} emoji="🎪" color={color} />
         <h2 style={{ fontWeight: 800, fontSize: 22, margin: "0 0 4px" }}>{d?.name || noData}</h2>
         {d?.status && (
           <div style={{
@@ -456,6 +467,8 @@ function EventsReader({ identity, color }: { identity: any; color: string }) {
           </div>
         </div>
       )}
+
+      <LocationCard locations={d?.locations} />
 
       {/* Save Contact */}
       {d?.name && (
