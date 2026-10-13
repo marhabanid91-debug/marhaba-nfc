@@ -1,7 +1,8 @@
 import CountryPhoneInput from "./CountryPhoneInput";
 import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext";
-import { SocialLinks } from "../types";
+import { SocialLinks, LocationItem } from "../types";
+import { LocationFields, cleanLocations } from "./LocationFields";
 import { saveBusinessData, uploadIdentityPhoto } from "../lib/db";
 
 // Platform config: prefix used to construct full URL from a handle/path
@@ -45,6 +46,7 @@ export default function BusinessScreen() {
     location: data?.location || "",
   });
   const [socialLinks, setSocialLinks] = useState<SocialLinks>(data?.socialLinks || {});
+  const [locations, setLocations] = useState<LocationItem[]>(data?.locations || []);
   const [saved, setSaved] = useState(false);
   const [uploadError, setUploadError] = useState("");
 
@@ -83,7 +85,7 @@ export default function BusinessScreen() {
       const raw = (socialLinks as any)[p.key] || "";
       if (raw) (normLinks as any)[p.key] = normaliseUrl(raw, p.prefix);
     }
-    const updatedBusiness = { ...form, socialLinks: normLinks };
+    const updatedBusiness = { ...form, socialLinks: normLinks, locations: cleanLocations(locations) };
     setIdentities(identities.map((id) =>
       id.id === identity?.id ? { ...id, business: updatedBusiness } : id
     ));
@@ -186,6 +188,9 @@ export default function BusinessScreen() {
           <F label={t("website")} value={form.website} onChange={(v) => setForm({ ...form, website: v })} placeholder="https://yoursite.com" type="url" optional />
           <F label={t("location")} value={form.location} onChange={(v) => setForm({ ...form, location: v })} placeholder={t("enterLocation")} optional />
 
+          {/* المواقع (حتى 3) */}
+          <LocationFields value={locations} onChange={setLocations} />
+
           {/* Social links — type=url with smart prefix */}
           <div>
             <label style={{ fontSize: 13, color: "var(--muted-foreground)", display: "block", marginBottom: 4 }}>
@@ -244,4 +249,3 @@ function F({ label, value, onChange, placeholder, multiline, optional, type }: {
     </div>
   );
 }
-
