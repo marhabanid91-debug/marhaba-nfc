@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useApp } from "../context/AppContext";
 import { ActiveMode } from "../types";
 import marhabaLogo from "../imports/marhaba-logo.png";
@@ -102,14 +103,19 @@ export default function ReaderView({ mode: defaultMode }: { mode?: ActiveMode })
   const color = modeColors[mode];
   const appUrl = "https://marhabanid.com";
 
-  return (
+  // يُرسم مباشرة في body (خارج أي حاوية بها transform/overflow) وبارتفاع الشاشة الفعلي
+  // حتى يعمل التمرير بالإصبع للأعلى والأسفل على الجوال
+  return createPortal(
     <div
       style={{
         position: "fixed",
-        inset: 0,
-        overflowY: "auto",
+        top: 0, left: 0, right: 0, bottom: 0,
+        height: "100dvh",
+        overflowY: "scroll",
         overflowX: "hidden",
         WebkitOverflowScrolling: "touch",
+        touchAction: "pan-y",
+        overscrollBehavior: "contain",
         background: "var(--background)",
         zIndex: 50,
       }}
@@ -190,7 +196,8 @@ export default function ReaderView({ mode: defaultMode }: { mode?: ActiveMode })
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
