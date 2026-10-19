@@ -4,6 +4,7 @@ import { useApp } from "../context/AppContext";
 import { ActiveMode } from "../types";
 import marhabaLogo from "../imports/marhaba-logo.png";
 import { LocationCard } from "./LocationFields";
+import { SocialIcon, socialName } from "./SocialIcon";
 
 // Hardcoded so the link is always valid even before useAppSettings loads
 const WA_ACCESSORY_LINK = "https://wa.me/966500816798?text=" + encodeURIComponent("أرغب في طلب اكسسوار لمنصة Marhaba NFC");
@@ -391,11 +392,13 @@ function BusinessReader({ identity, color }: { identity: any; color: string }) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview").map(([k, v]) => (
               <a key={k} href={String(v)} target="_blank" rel="noopener noreferrer" style={{
-                padding: "6px 14px", borderRadius: 20, fontSize: 12,
+                display: "inline-flex", alignItems: "center", gap: 8,
+                padding: "6px 14px 6px 8px", borderRadius: 20, fontSize: 12,
                 background: `${color}12`, border: `1px solid ${color}30`, color,
                 textDecoration: "none", fontWeight: 600,
               }}>
-                {k.charAt(0).toUpperCase() + k.slice(1)}
+                <SocialIcon k={k} />
+                {socialName(k)}
               </a>
             ))}
           </div>
@@ -498,11 +501,13 @@ function EventsReader({ identity, color }: { identity: any; color: string }) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview").map(([k, v]) => (
               <a key={k} href={String(v)} target="_blank" rel="noopener noreferrer" style={{
-                padding: "6px 14px", borderRadius: 20, fontSize: 12,
+                display: "inline-flex", alignItems: "center", gap: 8,
+                padding: "6px 14px 6px 8px", borderRadius: 20, fontSize: 12,
                 background: `${color}12`, border: `1px solid ${color}30`, color,
                 textDecoration: "none", fontWeight: 600,
               }}>
-                {k.charAt(0).toUpperCase() + k.slice(1)}
+                <SocialIcon k={k} />
+                {socialName(k)}
               </a>
             ))}
           </div>
