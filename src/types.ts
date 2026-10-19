@@ -35,6 +35,7 @@ export interface EmergencyVisibility {
 }
 
 export interface SocialLinks {
+  googleReview?: string;
   instagram?: string;
   tiktok?: string;
   facebook?: string;
