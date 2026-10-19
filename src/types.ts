@@ -11,6 +11,7 @@ export type Screen =
   | "reader-emergency"
   | "reader-business"
   | "reader-events"
+  | "reader-gift"
   | "offline-settings"
   | "add-identity"
   | "privacy-policy"
