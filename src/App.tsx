@@ -12,6 +12,7 @@ import PrivacyPolicyScreen from "./components/PrivacyPolicyScreen";
 import BottomNav from "./components/BottomNav";
 import PasswordInputDemo from "./components/PasswordInputDemo";
 import CardScanScreen from "./components/CardScanScreen";
+import GiftView from "./components/GiftView";
 import marhabaLogo from "./imports/marhaba-logo.png";
 
 const appScreens = ["home", "emergency", "business", "events", "accessory", "settings"];
@@ -61,6 +62,7 @@ function AppShell() {
       {screen === "reader-emergency" && <ReaderView mode="emergency" />}
       {screen === "reader-business" && <ReaderView mode="business" />}
       {screen === "reader-events" && <ReaderView mode="events" />}
+      {screen === "reader-gift" && <GiftView />}
       {screen === "password-demo" && <PasswordInputDemo />}
       {screen === "card-scan" && <CardScanScreen />}
       {showNav && <BottomNav />}
