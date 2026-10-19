@@ -7,6 +7,7 @@ import { saveBusinessData, uploadIdentityPhoto } from "../lib/db";
 
 // Platform config: prefix used to construct full URL from a handle/path
 const socialPlatforms: { key: keyof SocialLinks; label: string; icon: string; prefix: string; placeholder: string }[] = [
+  { key: "googleReview", label: "تقييم قوقل", icon: "⭐", prefix: "https://", placeholder: "رابط تقييم قوقل: https://g.page/r/…/review" },
   { key: "instagram", label: "Instagram", icon: "📸", prefix: "https://instagram.com/", placeholder: "https://instagram.com/username" },
   { key: "linkedin",  label: "LinkedIn",  icon: "💼", prefix: "https://linkedin.com/in/", placeholder: "https://linkedin.com/in/username" },
   { key: "twitter",   label: "X (Twitter)", icon: "🐦", prefix: "https://x.com/", placeholder: "https://x.com/username" },
