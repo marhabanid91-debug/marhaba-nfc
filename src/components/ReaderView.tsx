@@ -366,13 +366,30 @@ function BusinessReader({ identity, color }: { identity: any; color: string }) {
         <div style={{ textAlign: "center", padding: 24, color: "var(--muted-foreground)" }}>{noData}</div>
       )}
 
-      {d?.socialLinks && Object.entries(d.socialLinks).filter(([, v]) => v).length > 0 && (
+      {typeof (d?.socialLinks as any)?.googleReview === "string" && /^https:\/\//i.test((d?.socialLinks as any).googleReview) && (
+        <a
+          href={(d?.socialLinks as any).googleReview}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            marginTop: 12, padding: "14px", borderRadius: 12,
+            background: "#fff", color: "#202124", border: "1px solid #dadce0",
+            fontWeight: 700, fontSize: 15, textDecoration: "none",
+          }}
+        >
+          <span style={{ fontSize: 18 }}>⭐</span>
+          {lang === "ar" ? "قيّمنا على قوقل" : "Rate us on Google"}
+        </a>
+      )}
+
+      {d?.socialLinks && Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview").length > 0 && (
         <div className="card" style={{ marginTop: 12 }}>
           <div style={{ fontSize: 13, color: "var(--muted-foreground)", marginBottom: 12 }}>
             {lang === "ar" ? "وسائل التواصل الاجتماعي" : "Social Media"}
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {Object.entries(d.socialLinks).filter(([, v]) => v).map(([k, v]) => (
+            {Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview").map(([k, v]) => (
               <a key={k} href={String(v)} target="_blank" rel="noopener noreferrer" style={{
                 padding: "6px 14px", borderRadius: 20, fontSize: 12,
                 background: `${color}12`, border: `1px solid ${color}30`, color,
@@ -459,10 +476,27 @@ function EventsReader({ identity, color }: { identity: any; color: string }) {
         <div style={{ textAlign: "center", padding: 24, color: "var(--muted-foreground)" }}>{noData}</div>
       )}
 
-      {d?.socialLinks && Object.entries(d.socialLinks).filter(([, v]) => v).length > 0 && (
+      {typeof (d?.socialLinks as any)?.googleReview === "string" && /^https:\/\//i.test((d?.socialLinks as any).googleReview) && (
+        <a
+          href={(d?.socialLinks as any).googleReview}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            marginTop: 12, padding: "14px", borderRadius: 12,
+            background: "#fff", color: "#202124", border: "1px solid #dadce0",
+            fontWeight: 700, fontSize: 15, textDecoration: "none",
+          }}
+        >
+          <span style={{ fontSize: 18 }}>⭐</span>
+          {lang === "ar" ? "قيّمنا على قوقل" : "Rate us on Google"}
+        </a>
+      )}
+
+      {d?.socialLinks && Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview").length > 0 && (
         <div className="card" style={{ marginTop: 12 }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {Object.entries(d.socialLinks).filter(([, v]) => v).map(([k, v]) => (
+            {Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview").map(([k, v]) => (
               <a key={k} href={String(v)} target="_blank" rel="noopener noreferrer" style={{
                 padding: "6px 14px", borderRadius: 20, fontSize: 12,
                 background: `${color}12`, border: `1px solid ${color}30`, color,
