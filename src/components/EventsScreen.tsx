@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext";
 import { EventStatus, SocialLinks, LocationItem } from "../types";
 import { LocationFields, cleanLocations } from "./LocationFields";
+import { SocialIcon } from "./SocialIcon";
 import { saveEventsData, uploadIdentityPhoto } from "../lib/db";
 
 const socialPlatforms: { key: keyof SocialLinks; label: string; icon: string; prefix: string; placeholder: string }[] = [
@@ -209,7 +210,7 @@ export default function EventsScreen() {
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {socialPlatforms.map((p) => (
                 <div key={p.key} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ width: 24, textAlign: "center", fontSize: 16, flexShrink: 0 }}>{p.icon}</span>
+                  <span style={{ width: 28, textAlign: "center", fontSize: 18, flexShrink: 0, display: "inline-flex", justifyContent: "center" }}>{p.key === "googleReview" ? p.icon : <SocialIcon k={p.key} size={26} />}</span>
                   <input
                     type="url"
                     inputMode="url"
