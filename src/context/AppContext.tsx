@@ -7,6 +7,7 @@ import {
   updateIdentityActive, deleteIdentityFromDB, loadProfile, upsertProfile,
   linkSerialToIdentity, SerialRecord, loadPublicIdentityBySerial, lookupSerial,
 } from "../lib/db";
+import { getGiftBySerial, claimGift } from "../lib/gift";
 
 const defaultVisibility = {
   birthDate: true, bloodType: true, conditions: true,
@@ -74,7 +75,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return s ? { serial_number: s, status: "available", identity_id: null } : null;
   });
   const [authMode, setAuthMode] = useState<"login" | "register">(
-    localStorage.getItem("pending_serial") ? "register" : "login"
+    localStorage.getItem("pending_serial") || localStorage.getItem("pending_gift") ? "register" : "login"
   );
   const [identities, setIdentities] = useState<Identity[]>([]);
   const [activeIdentityId, setActiveIdentityId] = useState<string | null>(null);
@@ -124,7 +125,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const serialFromUrl = params.get("serial");
 
     if (serialFromUrl) {
-      loadPublicIdentityBySerial(serialFromUrl).then(async (identity) => {
+      getGiftBySerial(serialFromUrl).then((gift) => {
+        // بطاقة هدية مفعّلة: تُعرض صفحة الهدية فقط
+        if (gift && gift.status === "linked") {
+          setScreenState("reader-gift");
+          setInitializing(false);
+          return;
+        }
+        // بطاقة هدية لم تُفعَّل بعد: يسجّل المُهدي دخوله ثم تُفعَّل على حسابه
+        if (gift) {
+          localStorage.setItem("pending_gift", gift.serial);
+          window.location.replace(window.location.pathname);
+          return;
+        }
+        return loadPublicIdentityBySerial(serialFromUrl).then(async (identity) => {
         if (identity) {
           setIdentities([identity]);
           setActiveIdentityId(identity.id);
@@ -141,6 +155,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         setScreenState("auth");
         setInitializing(false);
+        });
       }).catch(() => {
         setScreenState("auth");
         setInitializing(false);
@@ -187,6 +202,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const loaded = await loadUserIdentities(su.id);
             setIdentities(loaded);
             if (loaded.length) setActiveIdentityId(loaded[0].id);
+
+            const pendingGift = localStorage.getItem("pending_gift");
+            if (pendingGift) {
+              claimGift(pendingGift)
+                .then(() => localStorage.removeItem("pending_gift"))
+                .catch(() => {});
+            }
 
             setPendingSerial((pending) => {
               if (pending && loaded.length) {
