@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { HIDE_SENSITIVE_FIELDS } from "./flags";
 import {
   Identity, EmergencyData, BusinessData, EventsData,
   OfflineSettings, ActiveMode, EmergencyContact, EmergencyVisibility,
@@ -229,7 +230,12 @@ export async function deleteIdentityFromDB(identityId: string) {
 // كانت عملية الحفظ تفشل بصمت وتترك الصف الأصلي (الفارغ) دون تحديث.
 
 export async function saveEmergencyData(identityId: string, data: EmergencyData) {
-  const row = mapEmergencyToDB(data);
+  const row: Record<string, unknown> = mapEmergencyToDB(data);
+  // عند إخفاء البيانات الحساسة لا نرسلها في الحفظ، فتبقى القيم القديمة في القاعدة كما هي دون استبدال بفراغ
+  if (HIDE_SENSITIVE_FIELDS) {
+    for (const k of ["birth_date","blood_type","conditions","allergies","medications","first_aid_instructions",
+      "show_birth_date","show_blood_type","show_conditions","show_allergies","show_medications","show_first_aid"]) delete row[k];
+  }
 
   const { error } = await supabase
     .from("emergency_data")
@@ -546,7 +552,10 @@ export async function loadPublicIdentityBySerial(serial: string): Promise<Identi
 
   const [idRow, emRow, emContacts, bizRow, evRow] = await Promise.all([
     supabase.from("identities").select("*").eq("id", identityId).maybeSingle(),
-    supabase.from("emergency_data").select("*").eq("identity_id", identityId).maybeSingle(),
+    // عند الإخفاء لا نطلب الحقول الحساسة من القاعدة أصلاً، فلا تصل إلى جهاز من يمسح البطاقة
+    supabase.from("emergency_data")
+      .select(HIDE_SENSITIVE_FIELDS ? "photo_url, name, locations" : "*")
+      .eq("identity_id", identityId).maybeSingle(),
     supabase.from("emergency_contacts").select("*").eq("identity_id", identityId).order("sort_order"),
     supabase.from("business_data").select("*").eq("identity_id", identityId).maybeSingle(),
     supabase.from("events_data").select("*").eq("identity_id", identityId).maybeSingle(),
