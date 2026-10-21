@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { HIDE_SENSITIVE_FIELDS } from "./flags";
+import { normalizeNotes } from "./contactNotes";
 import {
   Identity, EmergencyData, BusinessData, EventsData,
   OfflineSettings, ActiveMode, EmergencyContact, EmergencyVisibility,
@@ -18,6 +19,7 @@ function mapEmergencyFromDB(row: any, contacts: any[]): EmergencyData {
     allergies: row.allergies || "",
     medications: row.medications || "",
     firstAidInstructions: row.first_aid_instructions || "",
+    contactNotes: normalizeNotes(row.contact_notes),
     emergencyContacts: (contacts || []).map((c) => ({
       name: c.name || "",
       phone: c.phone || "",
@@ -46,6 +48,7 @@ function mapEmergencyToDB(data: EmergencyData) {
     allergies: data.allergies || null,
     medications: data.medications || null,
     first_aid_instructions: data.firstAidInstructions || null,
+    contact_notes: normalizeNotes(data.contactNotes),
     show_birth_date: data.visibility.birthDate,
     show_blood_type: data.visibility.bloodType,
     show_conditions: data.visibility.conditions,
@@ -554,7 +557,7 @@ export async function loadPublicIdentityBySerial(serial: string): Promise<Identi
     supabase.from("identities").select("*").eq("id", identityId).maybeSingle(),
     // عند الإخفاء لا نطلب الحقول الحساسة من القاعدة أصلاً، فلا تصل إلى جهاز من يمسح البطاقة
     supabase.from("emergency_data")
-      .select(HIDE_SENSITIVE_FIELDS ? "photo_url, name, locations" : "*")
+      .select(HIDE_SENSITIVE_FIELDS ? "photo_url, name, locations, contact_notes" : "*")
       .eq("identity_id", identityId).maybeSingle(),
     supabase.from("emergency_contacts").select("*").eq("identity_id", identityId).order("sort_order"),
     supabase.from("business_data").select("*").eq("identity_id", identityId).maybeSingle(),
