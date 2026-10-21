@@ -5,6 +5,7 @@ import { ActiveMode } from "../types";
 import marhabaLogo from "../imports/marhaba-logo.png";
 import { LocationCard } from "./LocationFields";
 import { HIDE_SENSITIVE_FIELDS } from "../lib/flags";
+import { noteLines } from "../lib/contactNotes";
 import { SocialIcon, socialName } from "./SocialIcon";
 
 // Hardcoded so the link is always valid even before useAppSettings loads
@@ -252,6 +253,60 @@ function SOSButton({ contacts, lang }: { contacts: any[]; lang: string }) {
   );
 }
 
+function NotifyFamily({ contacts, name, lang }: { contacts: any[]; name?: string; lang: string }) {
+  const [busy, setBusy] = useState<number | null>(null);
+  if (!contacts || contacts.length === 0) return null;
+
+  const send = (c: any, i: number) => {
+    setBusy(i);
+    const phone = String(c.phone || "").replace(/[^0-9]/g, "");
+    const who = name || (lang === "ar" ? "حامل هذه البطاقة" : "the holder of this card");
+    const open = (loc?: string) => {
+      const base = lang === "ar"
+        ? `السلام عليكم، وجدتُ ${who} ومعه بطاقة مرحبا. أرجو التواصل معي.`
+        : `Hello, I found ${who} and they have a Marhaba card. Please contact me.`;
+      const locLine = loc ? (lang === "ar" ? `\nموقعي الحالي: ${loc}` : `\nMy location: ${loc}`) : "";
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(base + locLine)}`, "_blank");
+      setBusy(null);
+    };
+    if (!navigator.geolocation) { open(); return; }
+    // الموقع اختياري: إن لم يوافق من يمسح البطاقة تُرسل الرسالة بدون موقع
+    navigator.geolocation.getCurrentPosition(
+      (pos) => open(`https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`),
+      () => open(),
+      { timeout: 8000 }
+    );
+  };
+
+  return (
+    <div style={{ marginTop: 16 }}>
+      {contacts.map((c: any, i: number) => (
+        <button
+          key={i}
+          onClick={() => send(c, i)}
+          disabled={busy !== null}
+          style={{
+            width: "100%", padding: "14px", borderRadius: 12, marginTop: i === 0 ? 0 : 8,
+            background: "#25D366", border: "none", color: "#fff", fontWeight: 700, fontSize: 14,
+            cursor: busy !== null ? "wait" : "pointer", fontFamily: "inherit", opacity: busy === i ? 0.7 : 1,
+          }}
+        >
+          💬 {busy === i
+            ? (lang === "ar" ? "جارٍ التحضير..." : "Preparing...")
+            : contacts.length === 1
+            ? (lang === "ar" ? "أبلغ الأهل أنني وجدته" : "Tell the family I found them")
+            : (lang === "ar" ? `أبلغ ${c.name || c.relationship || "الأهل"} أنني وجدته` : `Notify ${c.name || c.relationship || "family"}`)}
+        </button>
+      ))}
+      <div style={{ fontSize: 11, color: "var(--muted-foreground)", textAlign: "center", marginTop: 6 }}>
+        {lang === "ar"
+          ? "تفتح رسالة واتساب جاهزة، ويُضاف موقعك إن سمحت بذلك."
+          : "Opens a ready WhatsApp message. Your location is added only if you allow it."}
+      </div>
+    </div>
+  );
+}
+
 function EmergencyReader({ identity, color }: { identity: any; color: string }) {
   const { lang } = useApp();
   const d = identity?.emergency;
@@ -298,6 +353,17 @@ function EmergencyReader({ identity, color }: { identity: any; color: string }) 
         <InfoCard icon="🩺" label={lang === "ar" ? "الإسعافات الأولية" : "First Aid"} value={d.firstAidInstructions} />
       )}
 
+      {noteLines(d?.contactNotes, lang).length > 0 && (
+        <div className="card" style={{ marginTop: 12 }}>
+          <div style={{ fontSize: 13, color: "var(--muted-foreground)", marginBottom: 8 }}>
+            ℹ️ {lang === "ar" ? "تعليمات للمساعدة" : "Helper instructions"}
+          </div>
+          {noteLines(d?.contactNotes, lang).map((l, i) => (
+            <div key={i} style={{ fontWeight: 600, fontSize: 14, padding: "3px 0" }}>• {l}</div>
+          ))}
+        </div>
+      )}
+
       {visibleContacts.length > 0 && (
         <div className="card" style={{ marginTop: 12 }}>
           <div style={{ fontSize: 13, color: "var(--muted-foreground)", marginBottom: 12 }}>
@@ -319,7 +385,9 @@ function EmergencyReader({ identity, color }: { identity: any; color: string }) 
 
       <LocationCard locations={d?.locations} />
 
-      <SOSButton contacts={d?.emergencyContacts || []} lang={lang} />
+      <NotifyFamily contacts={visibleContacts} name={d?.name ? truncateName(d.name) : undefined} lang={lang} />
+
+      <SOSButton contacts={visibleContacts} lang={lang} />
 
       {/* Save Contact */}
       {d?.name && (
@@ -328,7 +396,7 @@ function EmergencyReader({ identity, color }: { identity: any; color: string }) 
           onClick={() => downloadVCard({
             name: d.name,
             phone: visibleContacts[0]?.phone,
-            note: [d.conditions, d.allergies, d.medications].filter(Boolean).join(" | "),
+            note: HIDE_SENSITIVE_FIELDS ? "" : [d.conditions, d.allergies, d.medications].filter(Boolean).join(" | "),
           })}
         />
       )}
