@@ -54,6 +54,11 @@ export interface LocationItem {
   visible: boolean;
 }
 
+export interface ContactNotes {
+  presets: string[];
+  custom: string;
+}
+
 export interface EmergencyData {
   photo: string;
   name: string;
@@ -63,6 +68,7 @@ export interface EmergencyData {
   allergies: string;
   medications: string;
   firstAidInstructions: string;
+  contactNotes?: ContactNotes;
   emergencyContacts: EmergencyContact[];
   visibility: EmergencyVisibility;
   locations?: LocationItem[];
