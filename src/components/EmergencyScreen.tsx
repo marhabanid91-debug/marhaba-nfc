@@ -5,6 +5,7 @@ import { EmergencyContact, EmergencyVisibility, LocationItem } from "../types";
 import { LocationFields, cleanLocations } from "./LocationFields";
 import { saveEmergencyData, uploadIdentityPhoto } from "../lib/db";
 import { HIDE_SENSITIVE_FIELDS } from "../lib/flags";
+import { NOTE_PRESETS, CUSTOM_NOTE_MAX, normalizeNotes, ContactNotes } from "../lib/contactNotes";
 
 const MAX_CONTACTS = 3;
 
@@ -33,6 +34,9 @@ export default function EmergencyScreen() {
     (data?.emergencyContacts || []).map((c) => ({ ...c, visible: c.visible ?? true }))
   );
   const [locations, setLocations] = useState<LocationItem[]>(data?.locations || []);
+  const [notes, setNotes] = useState<ContactNotes>(normalizeNotes(data?.contactNotes));
+  const togglePreset = (k: string) =>
+    setNotes((n) => ({ ...n, presets: n.presets.includes(k) ? n.presets.filter((x) => x !== k) : [...n.presets, k] }));
   const [saved, setSaved] = useState(false);
 
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -67,7 +71,7 @@ export default function EmergencyScreen() {
   };
 
   const save = () => {
-    const updatedEmergency = { ...form, emergencyContacts: contacts, visibility, locations: cleanLocations(locations) };
+    const updatedEmergency = { ...form, emergencyContacts: contacts, visibility, locations: cleanLocations(locations), contactNotes: normalizeNotes(notes) };
     setIdentities(identities.map((id) =>
       id.id === identity?.id
         ? { ...id, emergency: updatedEmergency }
@@ -268,6 +272,46 @@ export default function EmergencyScreen() {
           </FieldWithToggle>
           </>
           )}
+
+          {/* تعليمات عامة لمن يجد حامل البطاقة */}
+          <div>
+            <label style={{ fontSize: 13, color: "var(--muted-foreground)", display: "block", marginBottom: 6 }}>
+              {lang === "ar" ? "تعليمات للمساعدة (اختياري)" : "Helper instructions (optional)"}
+            </label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {NOTE_PRESETS.map((p) => {
+                const on = notes.presets.includes(p.key);
+                return (
+                  <button
+                    key={p.key}
+                    type="button"
+                    onClick={() => togglePreset(p.key)}
+                    aria-pressed={on}
+                    style={{
+                      padding: "6px 14px", borderRadius: 20, fontSize: 12, fontFamily: "inherit", cursor: "pointer",
+                      border: `1px solid ${on ? "var(--primary)" : "var(--border-strong)"}`,
+                      background: on ? "rgba(201,168,76,0.18)" : "transparent",
+                      color: on ? "var(--primary)" : "var(--muted-foreground)", fontWeight: on ? 700 : 500,
+                    }}
+                  >
+                    {on ? "✓ " : ""}{lang === "ar" ? p.ar : p.en}
+                  </button>
+                );
+              })}
+            </div>
+            <input
+              value={notes.custom}
+              maxLength={CUSTOM_NOTE_MAX}
+              onChange={(e) => setNotes({ ...notes, custom: e.target.value })}
+              placeholder={lang === "ar" ? "تعليمة أخرى قصيرة (اختياري)" : "Another short instruction (optional)"}
+              style={{ marginTop: 10 }}
+            />
+            <p style={{ fontSize: 11, color: "var(--muted-foreground)", marginTop: 4 }}>
+              {lang === "ar"
+                ? "تظهر لمن يمسح البطاقة. لا تكتب هنا معلومات صحية."
+                : "Shown to anyone who scans the card. Do not enter health information here."}
+            </p>
+          </div>
 
           {/* المواقع (حتى 3) */}
           <LocationFields value={locations} onChange={setLocations} />
