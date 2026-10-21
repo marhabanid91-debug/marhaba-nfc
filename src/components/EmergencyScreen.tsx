@@ -4,6 +4,7 @@ import { useApp } from "../context/AppContext";
 import { EmergencyContact, EmergencyVisibility, LocationItem } from "../types";
 import { LocationFields, cleanLocations } from "./LocationFields";
 import { saveEmergencyData, uploadIdentityPhoto } from "../lib/db";
+import { HIDE_SENSITIVE_FIELDS } from "../lib/flags";
 
 const MAX_CONTACTS = 3;
 
@@ -222,6 +223,8 @@ export default function EmergencyScreen() {
             </p>
           </div>
 
+          {!HIDE_SENSITIVE_FIELDS && (
+          <>
           {/* Date of birth with visibility toggle */}
           <FieldWithToggle
             label={t("birthDate")}
@@ -263,6 +266,8 @@ export default function EmergencyScreen() {
           <FieldWithToggle label={t("firstAidInstructions")} visible={visibility.firstAidInstructions} onToggle={() => toggleVisibility("firstAidInstructions")} optional>
             <textarea value={form.firstAidInstructions} onChange={(e) => setForm({ ...form, firstAidInstructions: e.target.value })} placeholder={t("enterFirstAid")} rows={2} style={{ resize: "none" }} />
           </FieldWithToggle>
+          </>
+          )}
 
           {/* المواقع (حتى 3) */}
           <LocationFields value={locations} onChange={setLocations} />
