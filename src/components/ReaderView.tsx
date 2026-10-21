@@ -4,6 +4,7 @@ import { useApp } from "../context/AppContext";
 import { ActiveMode } from "../types";
 import marhabaLogo from "../imports/marhaba-logo.png";
 import { LocationCard } from "./LocationFields";
+import { HIDE_SENSITIVE_FIELDS } from "../lib/flags";
 import { SocialIcon, socialName } from "./SocialIcon";
 
 // Hardcoded so the link is always valid even before useAppSettings loads
@@ -276,24 +277,24 @@ function EmergencyReader({ identity, color }: { identity: any; color: string }) 
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
-        {vis.bloodType !== false && d?.bloodType && (
+        {!HIDE_SENSITIVE_FIELDS && vis.bloodType !== false && d?.bloodType && (
           <InfoTile icon="🩸" label={lang === "ar" ? "فصيلة الدم" : "Blood Type"} value={d.bloodType} color={color} />
         )}
-        {vis.birthDate !== false && d?.birthDate && (
+        {!HIDE_SENSITIVE_FIELDS && vis.birthDate !== false && d?.birthDate && (
           <InfoTile icon="🎂" label={lang === "ar" ? "تاريخ الميلاد" : "Date of Birth"} value={d.birthDate} color={color} />
         )}
       </div>
 
-      {vis.conditions !== false && d?.conditions && (
+      {!HIDE_SENSITIVE_FIELDS && vis.conditions !== false && d?.conditions && (
         <InfoCard icon="🏥" label={lang === "ar" ? "الحالات الصحية" : "Medical Conditions"} value={d.conditions} />
       )}
-      {vis.allergies !== false && d?.allergies && (
+      {!HIDE_SENSITIVE_FIELDS && vis.allergies !== false && d?.allergies && (
         <InfoCard icon="⚠️" label={lang === "ar" ? "الحساسية" : "Allergies"} value={d.allergies} />
       )}
-      {vis.medications !== false && d?.medications && (
+      {!HIDE_SENSITIVE_FIELDS && vis.medications !== false && d?.medications && (
         <InfoCard icon="💊" label={lang === "ar" ? "الأدوية" : "Medications"} value={d.medications} />
       )}
-      {vis.firstAidInstructions !== false && d?.firstAidInstructions && (
+      {!HIDE_SENSITIVE_FIELDS && vis.firstAidInstructions !== false && d?.firstAidInstructions && (
         <InfoCard icon="🩺" label={lang === "ar" ? "الإسعافات الأولية" : "First Aid"} value={d.firstAidInstructions} />
       )}
 
