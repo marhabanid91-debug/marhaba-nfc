@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getGiftBySerial, toEmbed, GiftPublic } from "../lib/gift";
+import { getGiftBySerial, toEmbed, safeCatalogUrl, GiftPublic } from "../lib/gift";
 import marhabaLogo from "../imports/marhaba-logo.png";
 
 // صفحة الهدية التي يراها من يمسح بطاقة الهدية
@@ -16,6 +16,7 @@ export default function GiftView() {
   }, [serial]);
 
   const embed = toEmbed(gift?.gift_url);
+  const catalog = safeCatalogUrl(gift?.gift_catalog);
 
   return (
     <div
@@ -60,7 +61,7 @@ export default function GiftView() {
               title="gift"
               allow="autoplay; encrypted-media; fullscreen"
               allowFullScreen
-              style={{ width: "100%", aspectRatio: "16 / 9", border: 0, borderRadius: 16, background: "#000" }}
+              style={{ width: "100%", ...(embed.tall ? { height: "70vh" } : { aspectRatio: "16 / 9" }), border: 0, borderRadius: 16, background: "#000" }}
             />
           )}
           {embed.kind === "image" && (
@@ -71,6 +72,21 @@ export default function GiftView() {
           )}
           {embed.kind === "audio" && (
             <audio src={embed.src} controls style={{ width: "100%" }} />
+          )}
+
+          {catalog && (
+            <a
+              href={catalog}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "block", marginTop: 16, padding: "14px 18px", borderRadius: 14,
+                background: "var(--primary)", color: "#000", fontWeight: 700,
+                textDecoration: "none", fontSize: 16,
+              }}
+            >
+              📖 تصفح الكتالوج
+            </a>
           )}
         </div>
       )}
