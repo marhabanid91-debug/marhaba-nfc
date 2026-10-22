@@ -398,7 +398,7 @@ function IdentityCard({ identity, onModeChange, onPreview, onShare }: {
 }
 
 export default function HomeScreen() {
-  const { t, lang, identities, updateIdentityMode, setScreen, setReaderPreviewMode, setActiveIdentityId, addIdentity } = useApp();
+  const { t, lang, identities, updateIdentityMode, setScreen, setReaderPreviewMode, setActiveIdentityId, addIdentity, setGateSerial } = useApp();
   const [showAddModal, setShowAddModal] = useState(false);
   const [newName, setNewName] = useState("");
   const [shareIdentity, setShareIdentity] = useState<Identity | null>(null);
@@ -444,7 +444,7 @@ export default function HomeScreen() {
         {/* Add identity button */}
         <button
           className="btn-primary"
-          onClick={() => setShowAddModal(true)}
+          onClick={() => { setGateSerial(null); setScreen("serial-gate" as any); }}
           style={{ marginBottom: 24, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
