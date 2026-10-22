@@ -65,14 +65,19 @@ function GiftRow({
 }: { g: MyGift; onSaved: () => void; inputStyle: React.CSSProperties }) {
   const [url, setUrl] = useState(g.gift_url || "");
   const [title, setTitle] = useState(g.gift_title || "");
+  const [catalog, setCatalog] = useState(g.gift_catalog || "");
   const [msg, setMsg] = useState("");
 
   async function save() {
     if (url && toEmbed(url).kind === "none") {
-      setMsg("الرابط غير مدعوم. استخدمي رابط يوتيوب أو جوجل درايف.");
+      setMsg("الرابط غير مدعوم. استخدمي رابط يوتيوب أو ملف/مجلد جوجل درايف.");
       return;
     }
-    const ok = await setGiftLink(g.serial, url, title);
+    if (catalog && !/^https:\/\//i.test(catalog.trim())) {
+      setMsg("رابط الكتالوج يجب أن يبدأ بـ https://");
+      return;
+    }
+    const ok = await setGiftLink(g.serial, url, title, catalog.trim());
     setMsg(ok ? "تم التحديث، ستظهر الهدية الجديدة فوراً ✅" : "تعذّر الحفظ");
     if (ok) onSaved();
   }
@@ -94,8 +99,14 @@ function GiftRow({
       <input
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        placeholder="الصقي رابط يوتيوب أو جوجل درايف"
+        placeholder="رابط يوتيوب أو ملف أو مجلد جوجل درايف"
         style={{ ...inputStyle, direction: "ltr" }}
+      />
+      <input
+        value={catalog}
+        onChange={(e) => setCatalog(e.target.value)}
+        placeholder="رابط الكتالوج (اختياري) https://…"
+        style={{ ...inputStyle, direction: "ltr", marginTop: 8 }}
       />
       <button
         onClick={save}
