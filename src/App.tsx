@@ -12,6 +12,7 @@ import PrivacyPolicyScreen from "./components/PrivacyPolicyScreen";
 import BottomNav from "./components/BottomNav";
 import PasswordInputDemo from "./components/PasswordInputDemo";
 import CardScanScreen from "./components/CardScanScreen";
+import SerialGateScreen from "./components/SerialGateScreen";
 import GiftView from "./components/GiftView";
 import marhabaLogo from "./imports/marhaba-logo.png";
 
@@ -64,6 +65,7 @@ function AppShell() {
       {screen === "reader-events" && <ReaderView mode="events" />}
       {screen === "reader-gift" && <GiftView />}
       {screen === "password-demo" && <PasswordInputDemo />}
+      {screen === "serial-gate" && <SerialGateScreen />}
       {screen === "card-scan" && <CardScanScreen />}
       {showNav && <BottomNav />}
     </div>
