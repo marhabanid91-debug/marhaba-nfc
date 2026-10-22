@@ -57,6 +57,8 @@ interface AppContextType {
   isAdmin: boolean;
   pendingSerial: SerialRecord | null;
   setPendingSerial: (c: SerialRecord | null) => void;
+  gateSerial: string | null;
+  setGateSerial: (s: string | null) => void;
   authMode: "login" | "register";
   setAuthMode: (m: "login" | "register") => void;
 }
@@ -77,6 +79,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [authMode, setAuthMode] = useState<"login" | "register">(
     localStorage.getItem("pending_serial") || localStorage.getItem("pending_gift") ? "register" : "login"
   );
+  // الرقم المتوقع عند مسح بطاقة غير مفعّلة (يجب على الزائر إدخاله قبل أي تسجيل)
+  const [gateSerial, setGateSerial] = useState<string | null>(null);
   const [identities, setIdentities] = useState<Identity[]>([]);
   const [activeIdentityId, setActiveIdentityId] = useState<string | null>(null);
   const [readerPreviewMode, setReaderPreviewMode] = useState<ActiveMode>("business");
@@ -149,8 +153,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         const lookup = await lookupSerial(serialFromUrl);
         if (lookup.status === "available") {
-          localStorage.setItem("pending_serial", lookup.record.serial_number);
-          window.location.replace(window.location.pathname);
+          // بطاقة غير مفعّلة: لا تسجيل ولا ربط قبل إدخال الرقم المرفق مع البطاقة
+          setGateSerial(lookup.record.serial_number);
+          setScreenState("serial-gate");
+          setInitializing(false);
           return;
         }
         setScreenState("auth");
@@ -210,13 +216,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 .catch(() => {});
             }
 
-            setPendingSerial((pending) => {
-              if (pending && loaded.length) {
-                linkSerialToIdentity(pending.serial_number, loaded[0].id, su.id).catch(() => {});
-                localStorage.removeItem("pending_serial");
-              }
-              return null;
-            });
+            // pending_serial لا يُكتب إلا بعد التحقق من الرقم في شاشة serial-gate
+            const pendingCode = localStorage.getItem("pending_serial");
+            if (pendingCode) {
+              try {
+                let targetId = loaded.length && !loaded[0].serialNumber ? loaded[0].id : null;
+                if (!targetId) targetId = await createIdentity(su.id, "هويتي الجديدة");
+                if (targetId) {
+                  const ok = await linkSerialToIdentity(pendingCode, targetId, su.id);
+                  if (ok) setIdentities(await loadUserIdentities(su.id));
+                }
+              } catch { /* ignore */ }
+              localStorage.removeItem("pending_serial");
+            }
+            setPendingSerial(null);
           } catch {
             // silently continue
           } finally {
@@ -298,6 +311,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         darkMode, setDarkMode,
         disclaimerAcknowledged, setDisclaimerAcknowledged,
         dbLoading, initializing, supabaseUser, isAdmin, pendingSerial, setPendingSerial,
+        gateSerial, setGateSerial,
         authMode, setAuthMode,
       }}
     >
