@@ -3,7 +3,7 @@ import { supabase } from "./supabase";
 // ─── روابط الهدية: يوتيوب، جوجل درايف، أو رابط مباشر لصورة/فيديو/صوت ─────────
 
 export type Embed =
-  | { kind: "iframe"; src: string }
+  | { kind: "iframe"; src: string; tall?: boolean }
   | { kind: "image"; src: string }
   | { kind: "video"; src: string }
   | { kind: "audio"; src: string }
@@ -32,7 +32,15 @@ export function toEmbed(raw: string | null | undefined): Embed {
       : { kind: "none" };
   }
 
-  // جوجل درايف: صور وفيديو وصوت
+  // جوجل درايف: مجلد كامل (يجب أن يكون «أي شخص لديه الرابط»)
+  if (host === "drive.google.com") {
+    const folderId = u.pathname.match(/\/folders\/([\w-]+)/)?.[1];
+    if (folderId) {
+      return { kind: "iframe", src: `https://drive.google.com/embeddedfolderview?id=${folderId}#grid`, tall: true };
+    }
+  }
+
+  // جوجل درايف: ملف واحد صورة أو فيديو أو صوت
   if (host === "drive.google.com") {
     const id = u.pathname.match(/\/d\/([\w-]+)/)?.[1] || u.searchParams.get("id");
     return id
@@ -56,6 +64,18 @@ export interface GiftPublic {
   status: "available" | "linked";
   gift_title: string | null;
   gift_url: string | null;
+  gift_catalog: string | null;
+}
+
+/** رابط الكتالوج: https فقط، يُفتح في تبويب جديد */
+export function safeCatalogUrl(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  try {
+    const u = new URL(raw.trim());
+    return u.protocol === "https:" ? u.href : null;
+  } catch {
+    return null;
+  }
 }
 
 /** تعيد الهدية إن كان الرمز بطاقة هدية، وإلا null. لا ترمي أخطاء حتى لا تعطل التطبيق. */
@@ -63,7 +83,7 @@ export async function getGiftBySerial(rawSerial: string): Promise<GiftPublic | n
   try {
     const { data, error } = await supabase
       .from("gift_public")
-      .select("serial, status, gift_title, gift_url")
+      .select("serial, status, gift_title, gift_url, gift_catalog")
       .ilike("serial", rawSerial.trim())
       .maybeSingle();
     if (error || !data) return null;
@@ -80,11 +100,12 @@ export async function claimGift(rawSerial: string): Promise<boolean> {
 }
 
 /** تبديل رابط الهدية (للمُهدي مالك الحساب فقط). */
-export async function setGiftLink(serial: string, url: string, title: string): Promise<boolean> {
+export async function setGiftLink(serial: string, url: string, title: string, catalog: string): Promise<boolean> {
   const { data, error } = await supabase.rpc("set_gift_link", {
     p_serial: serial,
     p_url: url,
     p_title: title,
+    p_catalog: catalog,
   });
   return !error && data === true;
 }
@@ -93,6 +114,7 @@ export interface MyGift {
   serial: string;
   gift_title: string | null;
   gift_url: string | null;
+  gift_catalog: string | null;
 }
 
 export async function loadMyGifts(): Promise<MyGift[]> {
