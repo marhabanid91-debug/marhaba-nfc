@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useApp } from "../context/AppContext";
-import { checkSerialAvailability, linkSerialToIdentity, unlinkSerial } from "../lib/db";
+import { checkSerialAvailability, activateCard, unlinkSerial } from "../lib/db";
 import { supabase } from "../lib/supabase";
 import MyGifts from "./MyGifts";
 
 // Single source of truth for the WhatsApp accessory link — never changes at runtime
 const WA_LINK = "https://wa.me/966500816798?text=%D8%A3%D8%B1%D8%BA%D8%A8%20%D9%81%D9%8A%20%D8%B7%D9%84%D8%A8%20%D8%A7%D9%83%D8%B3%D8%B3%D9%88%D8%A7%D8%B1%20%D9%84%D9%85%D9%86%D8%B5%D8%A9%20Marhaba%20NFC";
+
+const SERIAL_PREFIX = "MARHABA-";
 
 const accessoryTypes = [
   { id: "nfc-card", icon: "🪪", labelAr: "بطاقة NFC", labelEn: "NFC Card" },
@@ -17,7 +19,8 @@ const accessoryTypes = [
 export default function AccessoryScreen() {
   const { t, lang, identities, setIdentities, activeIdentityId, setScreen, supabaseUser } = useApp();
   const [tab, setTab] = useState<"link" | "request">("link");
-  const [serial, setSerial] = useState("");
+  const [serial, setSerial] = useState(SERIAL_PREFIX);
+  const [actCode, setActCode] = useState("");
   const [linked, setLinked] = useState(false);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [requested, setRequested] = useState(false);
@@ -30,7 +33,7 @@ export default function AccessoryScreen() {
   const handleLink = async () => {
     setError("");
     const normalized = serial.trim().toUpperCase();
-    if (!normalized) return;
+    if (normalized === SERIAL_PREFIX || !normalized) return;
 
     setChecking(true);
     try {
@@ -47,9 +50,9 @@ export default function AccessoryScreen() {
         setError(lang === "ar" ? "هذا الرقم مستخدم مسبقاً لحساب آخر." : "This code is already linked to another account.");
         return;
       }
-      const ok = await linkSerialToIdentity(normalized, identity.id, supabaseUser.id);
+      const ok = await activateCard(normalized, actCode, identity.id);
       if (!ok) {
-        setError(lang === "ar" ? "هذا الرقم مستخدم مسبقاً لحساب آخر." : "This code is already linked to another account.");
+        setError(lang === "ar" ? "رمز التفعيل غير صحيح أو تجاوزتَ عدد المحاولات." : "Invalid activation code or too many attempts.");
         return;
       }
       {
@@ -71,7 +74,7 @@ export default function AccessoryScreen() {
       id.id === identity?.id ? { ...id, serialNumber: null } : id
     ));
     setLinked(false);
-    setSerial("");
+    setSerial(SERIAL_PREFIX);
     setError("");
     if (currentSerial && identity?.id && supabaseUser) {
       await unlinkSerial(currentSerial, identity.id).catch(() => {});
@@ -146,8 +149,24 @@ export default function AccessoryScreen() {
                   </label>
                   <input
                     value={serial}
-                    onChange={(e) => { setSerial(e.target.value); setError(""); }}
-                    placeholder="MRH-XXXXXX"
+                    onChange={(e) => {
+                      // البادئة MARHABA- ثابتة، والمستخدم يكتب الرقم فقط
+                      let v = e.target.value.toUpperCase();
+                      if (!v.startsWith(SERIAL_PREFIX)) v = SERIAL_PREFIX + v.replace(/^M?A?R?H?A?B?A?-?/, "");
+                      setSerial(v); setError("");
+                    }}
+                    placeholder="MARHABA-001"
+                    data-dir="ltr"
+                    style={{ letterSpacing: 2, textTransform: "uppercase", fontFamily: "monospace, sans-serif" }}
+                    onKeyDown={(e) => e.key === "Enter" && handleLink()}
+                  />
+                </div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <input
+                    value={actCode}
+                    onChange={(e) => setActCode(e.target.value.toUpperCase())}
+                    placeholder={lang === "ar" ? "رمز التفعيل المرفق XXXX-XXXX-XXXX" : "Activation code XXXX-XXXX-XXXX"}
                     data-dir="ltr"
                     style={{ letterSpacing: 2, textTransform: "uppercase", fontFamily: "monospace, sans-serif" }}
                     onKeyDown={(e) => e.key === "Enter" && handleLink()}
@@ -189,7 +208,7 @@ export default function AccessoryScreen() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <button className="btn-primary" onClick={() => setScreen("home")}>{t("backToHome")}</button>
-                  <button className="btn-ghost" onClick={() => { setLinked(false); setSerial(""); }}>
+                  <button className="btn-ghost" onClick={() => { setLinked(false); setSerial(SERIAL_PREFIX); setActCode(""); }}>
                     {lang === "ar" ? "ربط إكسسوار آخر" : "Link another accessory"}
                   </button>
                 </div>
