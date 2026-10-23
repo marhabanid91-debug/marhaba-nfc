@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getGiftBySerial, toEmbed, safeCatalogUrl, GiftPublic } from "../lib/gift";
+import { getGiftBySerial, toEmbed, safeCatalogUrl, giftItems, GiftPublic } from "../lib/gift";
 import marhabaLogo from "../imports/marhaba-logo.png";
 
 // صفحة الهدية التي يراها من يمسح بطاقة الهدية
@@ -15,7 +15,7 @@ export default function GiftView() {
     });
   }, [serial]);
 
-  const embed = toEmbed(gift?.gift_url);
+  const items = giftItems(gift).map((it) => ({ ...it, embed: toEmbed(it.url) })).filter((it) => it.embed.kind !== "none");
   const catalog = safeCatalogUrl(gift?.gift_catalog);
 
   return (
@@ -44,7 +44,7 @@ export default function GiftView() {
             {gift.gift_title || "هدية لك 🎁"}
           </h2>
 
-          {embed.kind === "none" && (
+          {items.length === 0 && (
             <div style={{
               background: "var(--card)", border: "1px solid var(--border)",
               borderRadius: 16, padding: 28, color: "var(--muted-foreground)", lineHeight: 1.8,
@@ -55,24 +55,26 @@ export default function GiftView() {
             </div>
           )}
 
-          {embed.kind === "iframe" && (
-            <iframe
-              src={embed.src}
-              title="gift"
-              allow="autoplay; encrypted-media; fullscreen"
-              allowFullScreen
-              style={{ width: "100%", ...(embed.tall ? { height: "70vh" } : { aspectRatio: "16 / 9" }), border: 0, borderRadius: 16, background: "#000" }}
-            />
-          )}
-          {embed.kind === "image" && (
-            <img src={embed.src} alt="" style={{ width: "100%", borderRadius: 16 }} />
-          )}
-          {embed.kind === "video" && (
-            <video src={embed.src} controls playsInline style={{ width: "100%", borderRadius: 16, background: "#000" }} />
-          )}
-          {embed.kind === "audio" && (
-            <audio src={embed.src} controls style={{ width: "100%" }} />
-          )}
+          {items.map((it, i) => (
+            <div key={i} style={{ marginBottom: 18 }}>
+              {it.title && <div style={{ fontWeight: 700, margin: "0 0 8px", fontSize: 16 }}>{it.title}</div>}
+              {it.embed.kind === "iframe" && (
+                <iframe
+                  src={it.embed.src}
+                  title={`gift-${i}`}
+                  allow="autoplay; encrypted-media; fullscreen"
+                  allowFullScreen
+                  loading="lazy"
+                  style={{ width: "100%", ...(it.embed.tall ? { height: "70vh" } : { aspectRatio: "16 / 9" }), border: 0, borderRadius: 16, background: "#000" }}
+                />
+              )}
+              {it.embed.kind === "image" && <img src={it.embed.src} alt="" style={{ width: "100%", borderRadius: 16 }} />}
+              {it.embed.kind === "video" && (
+                <video src={it.embed.src} controls playsInline style={{ width: "100%", borderRadius: 16, background: "#000" }} />
+              )}
+              {it.embed.kind === "audio" && <audio src={it.embed.src} controls style={{ width: "100%" }} />}
+            </div>
+          ))}
 
           {catalog && (
             <a
