@@ -480,6 +480,7 @@ export default function HomeScreen() {
             (lang === "ar" ? "هويتي" : "My Identity")
           }
           serialNumber={shareIdentity.serialNumber}
+          identity={shareIdentity}
           onClose={() => setShareIdentity(null)}
         />
       )}
