@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { claimGift, loadMyGifts, setGiftLink, toEmbed, MyGift } from "../lib/gift";
+import { claimGift, loadMyGifts, setGiftLink, toEmbed, giftItems, GiftItem, MyGift } from "../lib/gift";
 
 // قسم «هداياي» داخل حساب المُهدي: تفعيل بطاقة هدية وتبديل رابطها
 export default function MyGifts() {
@@ -63,21 +63,30 @@ export default function MyGifts() {
 function GiftRow({
   g, onSaved, inputStyle,
 }: { g: MyGift; onSaved: () => void; inputStyle: React.CSSProperties }) {
-  const [url, setUrl] = useState(g.gift_url || "");
+  const [items, setItems] = useState<GiftItem[]>(() => {
+    const it = giftItems(g);
+    return it.length ? it : [{ url: "", title: "" }];
+  });
   const [title, setTitle] = useState(g.gift_title || "");
   const [catalog, setCatalog] = useState(g.gift_catalog || "");
   const [msg, setMsg] = useState("");
 
+  const setItem = (i: number, patch: Partial<GiftItem>) =>
+    setItems((prev) => prev.map((it, k) => (k === i ? { ...it, ...patch } : it)));
+
   async function save() {
-    if (url && toEmbed(url).kind === "none") {
-      setMsg("الرابط غير مدعوم. استخدمي رابط يوتيوب أو ملف/مجلد جوجل درايف.");
+    const clean = items
+      .map((it) => ({ url: it.url.trim(), title: (it.title || "").trim() }))
+      .filter((it) => it.url);
+    if (clean.some((it) => toEmbed(it.url).kind === "none")) {
+      setMsg("أحد الروابط غير مدعوم. استخدمي رابط يوتيوب أو ملف/مجلد جوجل درايف أو رابط مباشر لصورة/فيديو/صوت.");
       return;
     }
     if (catalog && !/^https:\/\//i.test(catalog.trim())) {
       setMsg("رابط الكتالوج يجب أن يبدأ بـ https://");
       return;
     }
-    const ok = await setGiftLink(g.serial, url, title, catalog.trim());
+    const ok = await setGiftLink(g.serial, clean, title, catalog.trim());
     setMsg(ok ? "تم التحديث، ستظهر الهدية الجديدة فوراً ✅" : "تعذّر الحفظ");
     if (ok) onSaved();
   }
@@ -96,12 +105,44 @@ function GiftRow({
         placeholder="عنوان الهدية (مثال: لأجمل أم)"
         style={{ ...inputStyle, marginBottom: 8 }}
       />
-      <input
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        placeholder="رابط يوتيوب أو ملف أو مجلد جوجل درايف"
-        style={{ ...inputStyle, direction: "ltr" }}
-      />
+      {items.map((it, i) => (
+        <div key={i} style={{ border: "1px dashed var(--border-strong)", borderRadius: 10, padding: 10, marginBottom: 8 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+            <span style={{ fontSize: 12, color: "var(--muted-foreground)" }}>{items.length > 1 ? `هدية ${i + 1}` : "الهدية"}</span>
+            {items.length > 1 && (
+              <button
+                onClick={() => setItems((prev) => prev.filter((_, k) => k !== i))}
+                style={{ background: "none", border: "none", color: "var(--muted-foreground)", cursor: "pointer", fontSize: 16 }}
+                aria-label="حذف"
+              >✕</button>
+            )}
+          </div>
+          <input
+            value={it.url}
+            onChange={(e) => setItem(i, { url: e.target.value })}
+            placeholder="رابط يوتيوب أو ملف أو مجلد جوجل درايف"
+            style={{ ...inputStyle, direction: "ltr", marginBottom: 6 }}
+          />
+          <input
+            value={it.title || ""}
+            onChange={(e) => setItem(i, { title: e.target.value })}
+            placeholder="وصف قصير (اختياري)"
+            style={inputStyle}
+          />
+        </div>
+      ))}
+      {/* يظهر زر الإضافة فقط بعد أن يكتب المُهدي رابط الهدية الحالية */}
+      {items.every((it) => it.url.trim()) && (
+      <button
+        onClick={() => setItems((prev) => [...prev, { url: "", title: "" }])}
+        style={{
+          width: "100%", padding: "10px", borderRadius: 10, cursor: "pointer", fontFamily: "inherit",
+          background: "transparent", border: "1px dashed var(--primary)", color: "var(--primary)", fontWeight: 600,
+        }}
+      >
+        ➕ إضافة هدية أخرى
+      </button>
+      )}
       <input
         value={catalog}
         onChange={(e) => setCatalog(e.target.value)}
