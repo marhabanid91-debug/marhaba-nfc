@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import {
   loadUserIdentities, createIdentity, updateIdentityMode as dbUpdateMode,
   updateIdentityActive, deleteIdentityFromDB, loadProfile, upsertProfile,
-  linkSerialToIdentity, SerialRecord, loadPublicIdentityBySerial, lookupSerial,
+  activateCard, SerialRecord, loadPublicIdentityBySerial, lookupSerial,
 } from "../lib/db";
 import { getGiftBySerial, claimGift } from "../lib/gift";
 
@@ -218,16 +218,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
             // pending_serial لا يُكتب إلا بعد التحقق من الرقم في شاشة serial-gate
             const pendingCode = localStorage.getItem("pending_serial");
+            const pendingActCode = localStorage.getItem("pending_code") || "";
             if (pendingCode) {
               try {
                 let targetId = loaded.length && !loaded[0].serialNumber ? loaded[0].id : null;
                 if (!targetId) targetId = await createIdentity(su.id, "هويتي الجديدة");
                 if (targetId) {
-                  const ok = await linkSerialToIdentity(pendingCode, targetId, su.id);
+                  const ok = await activateCard(pendingCode, pendingActCode, targetId);
                   if (ok) setIdentities(await loadUserIdentities(su.id));
                 }
               } catch { /* ignore */ }
               localStorage.removeItem("pending_serial");
+              localStorage.removeItem("pending_code");
             }
             setPendingSerial(null);
           } catch {
