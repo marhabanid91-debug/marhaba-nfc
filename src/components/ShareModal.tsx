@@ -145,6 +145,7 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
           borderRadius: "24px 24px 0 0",
           width: "100%", maxWidth: 480,
           padding: "28px 24px 40px",
+          maxHeight: "92vh", overflowY: "auto", WebkitOverflowScrolling: "touch",
           display: "flex", flexDirection: "column", alignItems: "center", gap: 20,
         }}
         onClick={(e) => e.stopPropagation()}
