@@ -89,7 +89,7 @@ export default function AccessoryScreen() {
             width: 40, height: 40, borderRadius: 12,
             background: "rgba(201,168,76,0.15)",
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
-          }}>📟</div>
+          }}>🔗</div>
           <div>
             <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>{t("accessory")}</h1>
             <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: 0 }}>{identityName}</p>
