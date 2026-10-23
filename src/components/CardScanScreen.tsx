@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useApp } from "../context/AppContext";
-import { lookupSerial, SerialRecord, linkSerialToIdentity } from "../lib/db";
+import { lookupSerial, SerialRecord } from "../lib/db";
 import marhabaLogo from "../imports/marhaba-logo.png";
 
 type Phase =
@@ -13,7 +13,7 @@ type Phase =
 
 export default function CardScanScreen() {
   const { lang, setLang, setScreen, user, identities, activeIdentityId,
-          setPendingSerial, setAuthMode, supabaseUser } = useApp();
+          setGateSerial, setAuthMode } = useApp();
   const isAr = lang === "ar";
 
   const [serial, setSerial] = useState("");
@@ -50,19 +50,10 @@ export default function CardScanScreen() {
     }
   };
 
-  const handleActivate = async () => {
-    if (!record) return;
-    if (supabaseUser && identities.length > 0) {
-      // Already signed in — link immediately
-      const identityId = activeIdentityId || identities[0].id;
-      await linkSerialToIdentity(record.serial_number, identityId, supabaseUser.id);
-      setScreen("home");
-    } else {
-      // Not signed in — store serial and go to register
-      setPendingSerial(record);
-      setAuthMode("register");
-      setScreen("auth");
-    }
+  const handleActivate = () => {
+    // التفعيل يتم عبر بوابة رمز التفعيل السري
+    setGateSerial(record?.serial_number ?? null);
+    setScreen("serial-gate");
   };
 
   const handleViewProfile = () => {
@@ -79,7 +70,11 @@ export default function CardScanScreen() {
   return (
     <div style={{
       minHeight: "100%",
-      background: "var(--background)",
+      background:
+        "radial-gradient(ellipse 60% 38% at 0% 6%, rgba(201,168,76,0.22), transparent 70%)," +
+        "radial-gradient(ellipse 45% 30% at 4% 40%, rgba(201,168,76,0.12), transparent 70%)," +
+        "radial-gradient(ellipse 70% 40% at 50% 28%, rgba(201,168,76,0.08), transparent 75%)," +
+        "#050505",
       display: "flex",
       flexDirection: "column",
     }}>
@@ -90,7 +85,7 @@ export default function CardScanScreen() {
         justifyContent: "space-between",
         alignItems: "center",
       }}>
-        <img src={marhabaLogo} alt="مرحبا NFC" style={{ height: 36, width: "auto" }} />
+        <img src={marhabaLogo} alt="مرحبا NFC" style={{ height: 36, width: "auto", visibility: phase === "input" ? "hidden" : "visible" }} />
         {/* Language toggle */}
         <div style={{ display: "flex", gap: 6 }}>
           {(["ar", "en"] as const).map((l) => (
@@ -124,6 +119,13 @@ export default function CardScanScreen() {
 
         {/* Hero */}
         <div style={{ textAlign: "center", marginBottom: 40 }}>
+          {phase === "input" ? (
+            <img
+              src={marhabaLogo}
+              alt="مرحبا NFC"
+              style={{ width: 170, height: "auto", margin: "0 auto 20px", display: "block" }}
+            />
+          ) : (
           <div style={{
             width: 80, height: 80, borderRadius: 24,
             background: "rgba(201,168,76,0.1)",
@@ -135,9 +137,9 @@ export default function CardScanScreen() {
               : phase === "not_found" ? "❓"
               : phase === "unclaimed" ? "🎉"
               : phase === "claimed_mine" ? "✅"
-              : phase === "claimed_other" ? "🔒"
-              : "📟"}
+              : "🔒"}
           </div>
+          )}
           <h1 style={{
             fontSize: 26, fontWeight: 800, margin: "0 0 10px",
             background: "linear-gradient(135deg, #f0f0f5 20%, #c9a84c)",
