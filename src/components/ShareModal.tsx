@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { useApp } from "../context/AppContext";
+import { myCardToken } from "../lib/db";
 
 interface ShareModalProps {
   identityName: string;
@@ -14,8 +15,12 @@ export default function ShareModal({ identityName, serialNumber, onClose }: Shar
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState("");
 
-  // الصيغة اللي يقرأها التطبيق: ?serial=
-  const url = `https://marhabanid.com/?serial=${encodeURIComponent(serialNumber)}`;
+  // البطاقات الجديدة: ?c=الرمز العشوائي، والقديمة: ?serial=
+  const [token, setToken] = useState<string | null | undefined>(undefined);
+  useEffect(() => { myCardToken(serialNumber).then(setToken); }, [serialNumber]);
+  const url = token
+    ? `https://marhabanid.com/?c=${encodeURIComponent(token)}`
+    : `https://marhabanid.com/?serial=${encodeURIComponent(serialNumber)}`;
 
   useEffect(() => {
     const canvas = canvasRef.current;
