@@ -2,18 +2,49 @@ import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { useApp } from "../context/AppContext";
 import { myCardToken } from "../lib/db";
+import { Identity } from "../types";
 
 interface ShareModalProps {
   identityName: string;
   serialNumber: string;
+  identity?: Identity;
   onClose: () => void;
 }
 
-export default function ShareModal({ identityName, serialNumber, onClose }: ShareModalProps) {
+const vEsc = (v: string) => v.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/([,;])/g, "\\$1");
+
+/** بطاقة اتصال (vCard) تُقرأ بكاميرا الجوال دون إنترنت، بحسب إعدادات «بيانات القراءة دون إنترنت» */
+function buildOfflineVCard(identity: Identity | undefined, name: string, pageUrl: string): string | null {
+  if (!identity) return null;
+  const o = identity.offlineSettings || { name: true, contactPhone: false, emergencyPhone: true };
+  const contact = o.contactPhone ? (identity.business.phone || "").trim() : "";
+  const emergency = o.emergencyPhone
+    ? (identity.emergency.emergencyContacts || []).find((c) => c.visible && c.phone)
+    : undefined;
+  const showName = o.name && !!name;
+  if (!showName && !contact && !emergency) return null;
+
+  const fn = showName ? name : "مرحبا NFC";
+  const lines = [
+    "BEGIN:VCARD",
+    "VERSION:3.0",
+    `FN:${vEsc(fn)}`,
+    `N:${vEsc(fn)};;;;`,
+    contact ? `TEL;TYPE=CELL:${contact}` : "",
+    emergency ? `TEL;TYPE=HOME:${emergency.phone.trim()}` : "",
+    emergency ? `NOTE:${vEsc(`رقم الطوارئ${emergency.name ? ` (${emergency.name})` : ""}: ${emergency.phone.trim()}`)}` : "",
+    `URL:${pageUrl}`,
+    "END:VCARD",
+  ].filter(Boolean);
+  return lines.join("\n");
+}
+
+export default function ShareModal({ identityName, serialNumber, identity, onClose }: ShareModalProps) {
   const { t } = useApp();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState("");
+  const offlineCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // البطاقات الجديدة: ?c=الرمز العشوائي، والقديمة: ?serial=
   const [token, setToken] = useState<string | null | undefined>(undefined);
@@ -21,6 +52,28 @@ export default function ShareModal({ identityName, serialNumber, onClose }: Shar
   const url = token
     ? `https://marhabanid.com/?c=${encodeURIComponent(token)}`
     : `https://marhabanid.com/?serial=${encodeURIComponent(serialNumber)}`;
+
+  const vcard = buildOfflineVCard(identity, identityName, url);
+
+  useEffect(() => {
+    const c = offlineCanvasRef.current;
+    if (!c || !vcard) return;
+    QRCode.toCanvas(c, vcard, {
+      width: 240,
+      margin: 2,
+      errorCorrectionLevel: "M",
+      color: { dark: "#b8962e", light: "#1a1a1a" },
+    });
+  }, [vcard]);
+
+  const downloadOfflineQR = () => {
+    const c = offlineCanvasRef.current;
+    if (!c) return;
+    const a = document.createElement("a");
+    a.href = c.toDataURL("image/png");
+    a.download = `marhaba-offline-${serialNumber}.png`;
+    a.click();
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -100,6 +153,32 @@ export default function ShareModal({ identityName, serialNumber, onClose }: Shar
         <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "-8px 0 0", textAlign: "center" }}>
           {url}
         </p>
+
+        {/* QR دون إنترنت */}
+        {vcard && (
+          <div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: 10, paddingTop: 4 }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
+              📵 رمز QR يعمل دون إنترنت
+            </p>
+            <p style={{ fontSize: 12, color: "var(--text-muted)", margin: 0, textAlign: "center", lineHeight: 1.7 }}>
+              من يمسحه بكاميرا جواله يرى الاسم والرقم مع زر «حفظ جهة اتصال» حتى بدون إنترنت.
+              البيانات ثابتة وقت الطباعة، فإن تغيّر الرقم يُنشأ رمز جديد. تتحكم في ما يظهر من الإعدادات ← بيانات القراءة دون إنترنت.
+            </p>
+            <div style={{ padding: 12, background: "#1a1a1a", borderRadius: 16, border: "2px solid var(--gold-base, #b8962e)" }}>
+              <canvas ref={offlineCanvasRef} style={{ display: "block", borderRadius: 8 }} />
+            </div>
+            <button
+              onClick={downloadOfflineQR}
+              style={{
+                padding: "12px 0", borderRadius: 12, border: "1px solid var(--border-color)",
+                background: "var(--card-alt-bg, var(--card-bg))", color: "var(--text-primary)",
+                fontWeight: 600, fontSize: 14, cursor: "pointer", width: "100%",
+              }}
+            >
+              ⬇ تحميل رمز QR دون إنترنت
+            </button>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, width: "100%" }}>
