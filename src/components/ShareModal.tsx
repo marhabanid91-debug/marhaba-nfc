@@ -66,6 +66,26 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
     });
   }, [vcard]);
 
+  const shareOfflineQR = () => {
+    const c = offlineCanvasRef.current;
+    if (!c) return;
+    c.toBlob(async (blob) => {
+      if (!blob) return;
+      const file = new File([blob], `marhaba-offline-${serialNumber}.png`, { type: "image/png" });
+      try {
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: identityName });
+        } else if (navigator.share) {
+          await navigator.share({ title: identityName, url });
+        } else {
+          downloadOfflineQR();
+        }
+      } catch {
+        /* أُلغيت المشاركة */
+      }
+    }, "image/png");
+  };
+
   const downloadOfflineQR = () => {
     const c = offlineCanvasRef.current;
     if (!c) return;
@@ -176,6 +196,16 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
               }}
             >
               ⬇ تحميل رمز QR دون إنترنت
+            </button>
+            <button
+              onClick={shareOfflineQR}
+              style={{
+                padding: "12px 0", borderRadius: 12, border: "1px solid var(--border-color)",
+                background: "var(--card-alt-bg, var(--card-bg))", color: "var(--text-primary)",
+                fontWeight: 600, fontSize: 14, cursor: "pointer", width: "100%",
+              }}
+            >
+              📤 مشاركة رمز QR دون إنترنت
             </button>
           </div>
         )}
