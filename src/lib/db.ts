@@ -300,19 +300,15 @@ export type SerialLookupResult =
   | { status: "available"; record: SerialRecord }
   | { status: "linked";    record: SerialRecord };
 
-/** Look up a serial code in serial_inventory (case-insensitive). Source of truth. */
+/** يبحث عن الرقم التسلسلي عبر دالة آمنة (الجدول نفسه مغلق أمام العموم). */
 export async function lookupSerial(rawSerial: string): Promise<SerialLookupResult> {
   const serial = rawSerial.trim().toUpperCase();
-  const { data, error } = await supabase
-    .from("serial_inventory")
-    .select("serial_number, status, identity_id")
-    .ilike("serial_number", serial)
-    .maybeSingle();
-
-  if (error || !data) return { status: "not_found" };
-  return data.status === "available"
-    ? { status: "available", record: data as SerialRecord }
-    : { status: "linked",    record: data as SerialRecord };
+  const { data, error } = await supabase.rpc("lookup_serial", { p_serial: serial });
+  const row = Array.isArray(data) ? data[0] : data;
+  if (error || !row) return { status: "not_found" };
+  return row.status === "available"
+    ? { status: "available", record: row as SerialRecord }
+    : { status: "linked",    record: row as SerialRecord };
 }
 
 // ─── Identity rename ──────────────────────────────────────────────────────────
@@ -402,18 +398,8 @@ export async function activateCard(serial: string, code: string, identityId: str
 /**
  * Reset a serial back to available in serial_inventory and clear identities.serial_number.
  */
-export async function unlinkSerial(serial: string, identityId: string): Promise<void> {
-  const normalized = serial.trim().toUpperCase();
-  const ts = new Date().toISOString();
-
-  await Promise.all([
-    supabase.from("serial_inventory")
-      .update({ status: "available", identity_id: null, linked_at: null })
-      .eq("serial_number", normalized),
-    supabase.from("identities")
-      .update({ serial_number: null, updated_at: ts })
-      .eq("id", identityId),
-  ]);
+export async function unlinkSerial(serial: string, _identityId: string): Promise<void> {
+  await supabase.rpc("unlink_card", { p_serial: serial.trim() });
 }
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
@@ -572,33 +558,23 @@ export async function claimCard(
 
 // ─── Public identity lookup (no auth required — for NFC card readers) ────────
 
-export async function loadPublicIdentityBySerial(serial: string): Promise<Identity | null> {
-  const lookup = await lookupSerial(serial);
-  if (lookup.status !== "linked" || !lookup.record.identity_id) return null;
-
-  const identityId = lookup.record.identity_id;
-
-  const [idRow, emRow, emContacts, bizRow, evRow] = await Promise.all([
-    supabase.from("identities").select("*").eq("id", identityId).maybeSingle(),
-    // عند الإخفاء لا نطلب الحقول الحساسة من القاعدة أصلاً، فلا تصل إلى جهاز من يمسح البطاقة
-    supabase.from("emergency_data")
-      .select(HIDE_SENSITIVE_FIELDS ? "photo_url, name, locations, contact_notes" : "*")
-      .eq("identity_id", identityId).maybeSingle(),
-    supabase.from("emergency_contacts").select("*").eq("identity_id", identityId).order("sort_order"),
-    supabase.from("business_data").select("*").eq("identity_id", identityId).maybeSingle(),
-    supabase.from("events_data").select("*").eq("identity_id", identityId).maybeSingle(),
-  ]);
-
-  if (!idRow.data) return null;
+export async function loadPublicIdentityBySerial(serial: string, token?: string | null): Promise<Identity | null> {
+  // دالة آمنة: تعيد بيانات البطاقة العامة فقط، وترفض الرقم التسلسلي لبطاقات الرابط العشوائي
+  const { data, error } = await supabase.rpc("get_public_identity", {
+    p_serial: token ? null : serial,
+    p_token: token || null,
+  });
+  const d = data as any;
+  if (error || !d || !d.identity) return null;
 
   return {
-    id: identityId,
-    serialNumber: lookup.record.serial_number,
-    activeMode: (idRow.data.active_mode as ActiveMode) || "business",
-    isActive: idRow.data.is_active ?? true,
-    emergency: emRow.data ? mapEmergencyFromDB(emRow.data, emContacts.data || []) : defaultEmergency(),
-    business: bizRow.data ? mapBusinessFromDB(bizRow.data) : defaultBusiness(),
-    events: evRow.data ? mapEventsFromDB(evRow.data) : defaultEvents(),
+    id: d.identity.id,
+    serialNumber: d.serial,
+    activeMode: (d.identity.active_mode as ActiveMode) || "business",
+    isActive: d.identity.is_active ?? true,
+    emergency: d.emergency ? mapEmergencyFromDB(d.emergency, d.contacts || []) : defaultEmergency(),
+    business: d.business ? mapBusinessFromDB(d.business) : defaultBusiness(),
+    events: d.events ? mapEventsFromDB(d.events) : defaultEvents(),
     offlineSettings: defaultOffline(),
   };
 }
