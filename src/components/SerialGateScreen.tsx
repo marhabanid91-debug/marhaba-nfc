@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { supabase } from "../lib/supabase";
-import { lookupSerial, createIdentity, linkSerialToIdentity, deleteIdentityFromDB } from "../lib/db";
+import { verifyActivation, createIdentity, activateCard, deleteIdentityFromDB } from "../lib/db";
 import marhabaLogo from "../imports/marhaba-logo.png";
-
-const norm = (s: string) => s.trim().toUpperCase().replace(/\s+/g, "");
 
 /**
  * بوابة الرقم التسلسلي:
@@ -27,29 +25,21 @@ export default function SerialGateScreen() {
   };
 
   const handleVerify = async () => {
-    const typed = norm(code);
+    const typed = code.trim();
     if (!typed) return;
     setBusy(true); setError("");
     try {
-      if (gateSerial && typed !== norm(gateSerial)) {
-        setError(isAr ? "الرقم غير مطابق لهذه البطاقة" : "This number doesn't match the card");
+      const serial = await verifyActivation(gateSerial, typed);
+      if (!serial) {
+        setError(isAr ? "رمز التفعيل غير صحيح، أو البطاقة مفعّلة، أو تجاوزتَ عدد المحاولات (أعيدي المحاولة بعد قليل)" : "Invalid activation code, card already activated, or too many attempts");
         return;
       }
-      const res = await lookupSerial(typed);
-      if (res.status === "not_found") {
-        setError(isAr ? "الرقم غير موجود في النظام" : "Number not found");
-        return;
-      }
-      if (res.status === "linked") {
-        setError(isAr ? "هذه البطاقة مفعّلة مسبقاً" : "This card is already activated");
-        return;
-      }
-      const serial = res.record.serial_number;
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user || supabaseUser) {
         setVerified(serial);            // → صفحة إضافة الهوية مباشرة
       } else {
         localStorage.setItem("pending_serial", serial);
+        localStorage.setItem("pending_code", code.trim());
         setGateSerial(null);
         setAuthMode("register");
         setScreen("auth");
@@ -68,7 +58,7 @@ export default function SerialGateScreen() {
       if (!uid) { setError(isAr ? "انتهت الجلسة، سجّل الدخول" : "Session expired"); return; }
       const id = await createIdentity(uid, name.trim());
       if (!id) { setError(isAr ? "تعذّر إنشاء الهوية" : "Could not create identity"); return; }
-      const ok = await linkSerialToIdentity(verified, id, uid);
+      const ok = await activateCard(verified, code, id);
       if (!ok) {
         await deleteIdentityFromDB(id).catch(() => {});
         setError(isAr ? "تعذّر ربط البطاقة، قد تكون مفعّلة مسبقاً" : "Could not link the card");
@@ -91,12 +81,12 @@ export default function SerialGateScreen() {
       <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: 40, marginBottom: 10 }}>{verified ? "✅" : "🔐"}</div>
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 8px" }}>
-          {verified ? (isAr ? "أضف هويتك" : "Add your identity") : (isAr ? "أدخل الرقم المرفق مع البطاقة" : "Enter the number included with your card")}
+          {verified ? (isAr ? "أضف هويتك" : "Add your identity") : (isAr ? "أدخل رمز التفعيل المرفق مع البطاقة" : "Enter the activation code included with your card")}
         </h1>
         <p style={{ color: "var(--muted-foreground)", fontSize: 14, lineHeight: 1.7, margin: 0 }}>
           {verified
             ? (isAr ? "اكتب اسم الهوية التي ستُربط بهذه البطاقة." : "Name the identity to link to this card.")
-            : (isAr ? "لتفعيل بطاقة جديدة، اكتب الرقم التسلسلي المرفق معها." : "To activate a new card, type the serial number that came with it.")}
+            : (isAr ? "لتفعيل بطاقة جديدة، اكتب رمز التفعيل المطبوع على الورقة المرفقة معها." : "To activate a new card, type the activation code printed on the insert that came with it.")}
         </p>
       </div>
 
@@ -107,7 +97,7 @@ export default function SerialGateScreen() {
               value={code}
               onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(""); }}
               onKeyDown={(e) => e.key === "Enter" && handleVerify()}
-              placeholder="MARHABA-000"
+              placeholder="XXXX-XXXX-XXXX"
               data-dir="ltr"
               autoFocus
               style={{ height: 56, fontSize: 18, letterSpacing: 2, textAlign: "center", fontFamily: "monospace, sans-serif", textTransform: "uppercase" }}
