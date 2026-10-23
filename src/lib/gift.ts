@@ -59,12 +59,25 @@ export function toEmbed(raw: string | null | undefined): Embed {
 
 // ─── قاعدة البيانات ────────────────────────────────────────────────────────────
 
+export interface GiftItem {
+  url: string;
+  title?: string;
+}
+
+/** عناصر الهدية: القائمة الجديدة، أو الرابط القديم الوحيد إن لم توجد قائمة */
+export function giftItems(g: { gift_items?: GiftItem[] | null; gift_url?: string | null } | null | undefined): GiftItem[] {
+  if (!g) return [];
+  if (Array.isArray(g.gift_items) && g.gift_items.length) return g.gift_items;
+  return g.gift_url ? [{ url: g.gift_url }] : [];
+}
+
 export interface GiftPublic {
   serial: string;
   status: "available" | "linked";
   gift_title: string | null;
   gift_url: string | null;
   gift_catalog: string | null;
+  gift_items: GiftItem[] | null;
 }
 
 /** رابط الكتالوج: https فقط، يُفتح في تبويب جديد */
@@ -83,7 +96,7 @@ export async function getGiftBySerial(rawSerial: string): Promise<GiftPublic | n
   try {
     const { data, error } = await supabase
       .from("gift_public")
-      .select("serial, status, gift_title, gift_url, gift_catalog")
+      .select("serial, status, gift_title, gift_url, gift_catalog, gift_items")
       .ilike("serial", rawSerial.trim())
       .maybeSingle();
     if (error || !data) return null;
@@ -99,11 +112,11 @@ export async function claimGift(rawSerial: string): Promise<boolean> {
   return !error && data === true;
 }
 
-/** تبديل رابط الهدية (للمُهدي مالك الحساب فقط). */
-export async function setGiftLink(serial: string, url: string, title: string, catalog: string): Promise<boolean> {
+/** تبديل محتوى الهدية (للمُهدي مالك الحساب فقط): أي عدد من العناصر. */
+export async function setGiftLink(serial: string, items: GiftItem[], title: string, catalog: string): Promise<boolean> {
   const { data, error } = await supabase.rpc("set_gift_link", {
     p_serial: serial,
-    p_url: url,
+    p_items: items,
     p_title: title,
     p_catalog: catalog,
   });
@@ -115,6 +128,7 @@ export interface MyGift {
   gift_title: string | null;
   gift_url: string | null;
   gift_catalog: string | null;
+  gift_items: GiftItem[] | null;
 }
 
 export async function loadMyGifts(): Promise<MyGift[]> {
