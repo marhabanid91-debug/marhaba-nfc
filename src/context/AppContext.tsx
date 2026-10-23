@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import {
   loadUserIdentities, createIdentity, updateIdentityMode as dbUpdateMode,
   updateIdentityActive, deleteIdentityFromDB, loadProfile, upsertProfile,
-  activateCard, SerialRecord, loadPublicIdentityBySerial, lookupSerial,
+  activateCard, serialForToken, isTokenCard, SerialRecord, loadPublicIdentityBySerial, lookupSerial,
 } from "../lib/db";
 import { getGiftBySerial, claimGift } from "../lib/gift";
 
@@ -126,10 +126,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     document.documentElement.setAttribute("data-theme", saved === "light" ? "light" : "dark");
 
     const params = new URLSearchParams(window.location.search);
-    const serialFromUrl = params.get("serial");
+    const tokenFromUrl = params.get("c");
+    const rawSerialFromUrl = params.get("serial");
 
-    if (serialFromUrl) {
-      getGiftBySerial(serialFromUrl).then((gift) => {
+    if (tokenFromUrl || rawSerialFromUrl) {
+      // البطاقات الجديدة تُفتح برمز عشوائي (?c=)، والبطاقات ذات الرمز لا تُفتح بالرقم التسلسلي
+      const resolveSerial = async (): Promise<string | null> => {
+        if (tokenFromUrl) return await serialForToken(tokenFromUrl);
+        if (await isTokenCard(rawSerialFromUrl!)) return null;
+        return rawSerialFromUrl;
+      };
+      resolveSerial().then((serialFromUrl) => {
+      if (!serialFromUrl) {
+        setScreenState("auth");
+        setInitializing(false);
+        return;
+      }
+      return getGiftBySerial(serialFromUrl).then((gift) => {
         // بطاقة هدية مفعّلة: تُعرض صفحة الهدية فقط
         if (gift && gift.status === "linked") {
           setScreenState("reader-gift");
@@ -162,6 +175,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setScreenState("auth");
         setInitializing(false);
         });
+      });
       }).catch(() => {
         setScreenState("auth");
         setInitializing(false);
