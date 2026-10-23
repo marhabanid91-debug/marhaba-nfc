@@ -155,7 +155,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           window.location.replace(window.location.pathname);
           return;
         }
-        return loadPublicIdentityBySerial(serialFromUrl).then(async (identity) => {
+        return loadPublicIdentityBySerial(serialFromUrl, tokenFromUrl).then(async (identity) => {
         if (identity) {
           setIdentities([identity]);
           setActiveIdentityId(identity.id);
