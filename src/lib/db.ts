@@ -374,6 +374,31 @@ export async function linkSerialToIdentity(
   return true;
 }
 
+/** يطبّع رمز التفعيل المكتوب (يتجاهل الشرطات والمسافات) */
+export const normalizeCode = (c: string) => c.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+
+/**
+ * تحقق من رمز التفعيل السري (قبل التسجيل). يعيد الرقم التسلسلي إن صح الرمز
+ * وكانت البطاقة متاحة، وإلا null. الخادم يحدّ المحاولات الخاطئة.
+ */
+export async function verifyActivation(serial: string | null, code: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc("verify_activation", {
+    p_serial: serial ?? "",
+    p_code: normalizeCode(code),
+  });
+  return error || !data ? null : (data as string);
+}
+
+/** تفعيل البطاقة وربطها بهوية المستخدم (يتحقق الخادم من الرمز ومن ملكية الهوية). */
+export async function activateCard(serial: string, code: string, identityId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc("activate_card", {
+    p_serial: serial,
+    p_code: normalizeCode(code),
+    p_identity_id: identityId,
+  });
+  return !error && data === true;
+}
+
 /**
  * Reset a serial back to available in serial_inventory and clear identities.serial_number.
  */
