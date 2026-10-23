@@ -3,6 +3,12 @@ import { useApp } from "../context/AppContext";
 import marhabaLogo from "../imports/marhaba-logo.png";
 import { supabase } from "../lib/supabase";
 
+const GOLD_BG =
+  "radial-gradient(ellipse 60% 30% at 0% 4%, rgba(201,168,76,0.22), transparent 70%)," +
+  "radial-gradient(ellipse 45% 25% at 3% 34%, rgba(201,168,76,0.12), transparent 70%)," +
+  "radial-gradient(ellipse 70% 35% at 50% 12%, rgba(201,168,76,0.08), transparent 75%)," +
+  "#050505";
+
 export default function AuthScreen() {
   const { t, setScreen, lang, setLang, authMode, setAuthMode } = useApp();
   const [mode, setMode] = useState<"login" | "register">(authMode);
@@ -108,7 +114,7 @@ export default function AuthScreen() {
 
   if (showVerification) {
     return (
-      <div className="screen fade-in" style={{ paddingBottom: 0 }}>
+      <div className="screen fade-in" style={{ paddingBottom: 0, background: GOLD_BG }}>
         <div style={{ padding: "60px 24px 32px", textAlign: "center" }}>
           <img src={marhabaLogo} alt="مرحبا NFC" style={{ width: 90, height: "auto", margin: "0 auto 28px", display: "block" }} />
           <div style={{ fontSize: 48, marginBottom: 16 }}>📧</div>
@@ -143,7 +149,7 @@ export default function AuthScreen() {
   }
 
   return (
-    <div className="screen fade-in" style={{ paddingBottom: 0 }}>
+    <div className="screen fade-in" style={{ paddingBottom: 0, background: GOLD_BG }}>
       <div style={{ padding: "40px 24px 32px" }}>
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
