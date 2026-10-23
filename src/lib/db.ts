@@ -602,3 +602,35 @@ export async function loadPublicIdentityBySerial(serial: string): Promise<Identi
     offlineSettings: defaultOffline(),
   };
 }
+
+// ─── رابط البطاقة العشوائي (?c=token) ─────────────────────────────────────────
+
+/** يحوّل الرمز العشوائي في الرابط إلى الرقم التسلسلي، أو null إن لم يوجد. */
+export async function serialForToken(token: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase.rpc("serial_for_token", { p_token: token.trim() });
+    return error || !data ? null : (data as string);
+  } catch {
+    return null;
+  }
+}
+
+/** هل هذه البطاقة تعمل بالرابط العشوائي فقط؟ (إن فشل الاستعلام نعتبرها بطاقة قديمة) */
+export async function isTokenCard(serial: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc("is_token_card", { p_serial: serial.trim() });
+    return !error && data === true;
+  } catch {
+    return false;
+  }
+}
+
+/** رمز الرابط العشوائي لبطاقة يملكها المستخدم الحالي (للمشاركة)، أو null للبطاقات القديمة. */
+export async function myCardToken(serial: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase.rpc("my_card_token", { p_serial: serial.trim() });
+    return error || !data ? null : (data as string);
+  } catch {
+    return null;
+  }
+}
