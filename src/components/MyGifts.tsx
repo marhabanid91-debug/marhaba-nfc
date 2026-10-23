@@ -6,6 +6,7 @@ export default function MyGifts() {
   const [list, setList] = useState<MyGift[]>([]);
   const [code, setCode] = useState("");
   const [msg, setMsg] = useState("");
+  const [showAdd, setShowAdd] = useState(false);
 
   const load = () => loadMyGifts().then(setList);
   useEffect(() => {
@@ -18,6 +19,7 @@ export default function MyGifts() {
     setMsg(ok ? "تم تفعيل الهدية ✅" : "الرمز غير صحيح أو مفعّل من قبل");
     if (ok) {
       setCode("");
+      setShowAdd(false);
       load();
     }
   }
@@ -32,6 +34,19 @@ export default function MyGifts() {
     <section dir="rtl" style={{ marginTop: 28 }}>
       <h3 style={{ margin: "0 0 12px", fontSize: 16 }}>🎁 هداياي</h3>
 
+      {list.length > 0 && !showAdd && (
+        <button
+          onClick={() => setShowAdd(true)}
+          style={{
+            width: "100%", padding: "10px", borderRadius: 10, cursor: "pointer", fontFamily: "inherit",
+            background: "transparent", border: "1px dashed var(--primary)", color: "var(--primary)", fontWeight: 600,
+            marginBottom: 8,
+          }}
+        >
+          ➕ إضافة هدية جديدة (رمز بطاقة لشخص آخر)
+        </button>
+      )}
+      {(list.length === 0 || showAdd) && (
       <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
         <input
           value={code}
@@ -51,6 +66,7 @@ export default function MyGifts() {
           تفعيل
         </button>
       </div>
+      )}
       {msg && <p style={{ fontSize: 13, color: "var(--muted-foreground)" }}>{msg}</p>}
 
       {list.map((g) => (
@@ -131,18 +147,6 @@ function GiftRow({
           />
         </div>
       ))}
-      {/* يظهر زر الإضافة فقط بعد أن يكتب المُهدي رابط الهدية الحالية */}
-      {items.every((it) => it.url.trim()) && (
-      <button
-        onClick={() => setItems((prev) => [...prev, { url: "", title: "" }])}
-        style={{
-          width: "100%", padding: "10px", borderRadius: 10, cursor: "pointer", fontFamily: "inherit",
-          background: "transparent", border: "1px dashed var(--primary)", color: "var(--primary)", fontWeight: 600,
-        }}
-      >
-        ➕ إضافة هدية أخرى
-      </button>
-      )}
       <input
         value={catalog}
         onChange={(e) => setCatalog(e.target.value)}
