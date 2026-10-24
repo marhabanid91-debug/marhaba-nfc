@@ -5,6 +5,7 @@ import { useApp } from "../context/AppContext";
 import { myCardToken } from "../lib/db";
 import { Identity } from "../types";
 import marhabaLogo from "../imports/marhaba-logo.png";
+import { makePrintPng } from "../lib/printPng";
 
 interface ShareModalProps {
   identityName: string;
@@ -113,42 +114,43 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
     return () => { cancelled = true; };
   }, [url]);
 
-  const shareOfflineQR = () => {
+  const shareOfflineQR = async () => {
     const c = offlineCanvasRef.current;
     if (!c) return;
-    c.toBlob(async (blob) => {
-      if (!blob) return;
-      const file = new File([blob], `marhaba-offline-${serialNumber}.png`, { type: "image/png" });
-      try {
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: identityName });
-        } else if (navigator.share) {
-          await navigator.share({ title: identityName, url });
-        } else {
-          downloadOfflineQR();
-        }
-      } catch {
-        /* أُلغيت المشاركة */
+    const blob = await makePrintPng(c);
+    const file = new File([blob], `marhaba-offline-${serialNumber}.png`, { type: "image/png" });
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: identityName });
+      } else if (navigator.share) {
+        await navigator.share({ title: identityName, url });
+      } else {
+        saveBlob(blob, file.name);
       }
-    }, "image/png");
+    } catch {
+      /* أُلغيت المشاركة */
+    }
   };
 
-  const downloadQR = () => {
+  const saveBlob = (blob: Blob, name: string) => {
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(href), 5000);
+  };
+
+  const downloadQR = async () => {
     const c = canvasRef.current;
     if (!c) return;
-    const a = document.createElement("a");
-    a.href = c.toDataURL("image/png");
-    a.download = `marhaba-${serialNumber}.png`;
-    a.click();
+    saveBlob(await makePrintPng(c), `marhaba-${serialNumber}.png`);
   };
 
-  const downloadOfflineQR = () => {
+  const downloadOfflineQR = async () => {
     const c = offlineCanvasRef.current;
     if (!c) return;
-    const a = document.createElement("a");
-    a.href = c.toDataURL("image/png");
-    a.download = `marhaba-offline-${serialNumber}.png`;
-    a.click();
+    saveBlob(await makePrintPng(c), `marhaba-offline-${serialNumber}.png`);
   };
 
   const copyLink = async () => {
