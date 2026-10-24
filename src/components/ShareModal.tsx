@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import QRCode from "qrcode";
 import { useApp } from "../context/AppContext";
 import { myCardToken } from "../lib/db";
@@ -166,22 +167,24 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
     }
   };
 
-  return (
+  // يُرسم في body (خارج حاوية التطبيق التي تمنع التمرير) والتمرير على الطبقة نفسها كما في صفحة القراءة
+  return createPortal(
     <div
       style={{
-        position: "fixed", inset: 0, zIndex: 9999,
+        position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+        height: "100dvh", zIndex: 9999,
         background: "rgba(0,0,0,0.7)",
-        display: "flex", alignItems: "flex-end", justifyContent: "center",
+        overflowY: "scroll", overflowX: "hidden",
+        WebkitOverflowScrolling: "touch", touchAction: "pan-y", overscrollBehavior: "contain",
       }}
       onClick={onClose}
     >
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
       <div
         style={{
           background: "var(--card-bg)",
           borderRadius: "24px 24px 0 0",
           width: "100%", maxWidth: 480,
-          maxHeight: "92dvh", overflowY: "auto", overscrollBehavior: "contain",
-          WebkitOverflowScrolling: "touch", touchAction: "pan-y",
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -280,6 +283,8 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
 
         </div>
       </div>
-    </div>
+      </div>
+    </div>,
+    document.body
   );
 }
