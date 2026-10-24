@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { useApp } from "../context/AppContext";
 import { myCardToken } from "../lib/db";
 import { Identity } from "../types";
+import marhabaLogo from "../imports/marhaba-logo.png";
 
 interface ShareModalProps {
   identityName: string;
@@ -32,7 +33,6 @@ function buildOfflineVCard(identity: Identity | undefined, name: string, pageUrl
     `N:${vEsc(fn)};;;;`,
     contact ? `TEL;TYPE=CELL:${contact}` : "",
     emergency ? `TEL;TYPE=HOME:${emergency.phone.trim()}` : "",
-    emergency ? `NOTE:${vEsc(`رقم الطوارئ${emergency.name ? ` (${emergency.name})` : ""}: ${emergency.phone.trim()}`)}` : "",
     `URL:${pageUrl}`,
     "END:VCARD",
   ].filter(Boolean);
@@ -58,12 +58,47 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
   useEffect(() => {
     const c = offlineCanvasRef.current;
     if (!c || !vcard) return;
+    let cancelled = false;
     QRCode.toCanvas(c, vcard, {
-      width: 240,
+      width: 320,
       margin: 2,
-      errorCorrectionLevel: "M",
-      color: { dark: "#b8962e", light: "#1a1a1a" },
+      errorCorrectionLevel: "H", // تصحيح أخطاء عالٍ ليتحمّل الشعار في المنتصف
+      color: { dark: "#1a1a1a", light: "#ffffff" }, // الوضع القياسي ليقرأه أي جوال
+    }).then(() => {
+      if (cancelled) return;
+      const ctx = c.getContext("2d");
+      if (!ctx) return;
+      const k = 92 / 84;
+      const size = 92;
+      const x = (c.width - size) / 2;
+      const y = (c.height - size) / 2;
+      const draw = (img?: HTMLImageElement) => {
+        if (cancelled) return;
+        ctx.fillStyle = "#1a1a1a";
+        ctx.strokeStyle = "#b8962e";
+        ctx.lineWidth = 3 * k;
+        ctx.beginPath();
+        ctx.roundRect(x, y, size, size, 14 * k);
+        ctx.fill();
+        ctx.stroke();
+        if (img) ctx.drawImage(img, x + (size - 38 * k) / 2, y + 8 * k, 38 * k, 38 * k);
+        ctx.fillStyle = "#e6c35a";
+        ctx.font = `bold ${13 * k}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("دون إنترنت", x + size / 2, y + size - 17 * k);
+        ctx.font = `bold ${10 * k}px sans-serif`;
+        ctx.fillStyle = "#b8962e";
+        ctx.fillText("OFFLINE", x + size / 2, y + size - 6 * k);
+      };
+      const img = new Image();
+      img.onload = () => draw(img);
+      img.onerror = () => draw();
+      img.src = marhabaLogo;
     });
+    return () => {
+      cancelled = true;
+    };
   }, [vcard]);
 
   const shareOfflineQR = () => {
@@ -185,7 +220,7 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
               من يمسحه بكاميرا جواله يرى الاسم والرقم مع زر «حفظ جهة اتصال» حتى بدون إنترنت.
               البيانات ثابتة وقت الطباعة، فإن تغيّر الرقم يُنشأ رمز جديد. تتحكم في ما يظهر من الإعدادات ← بيانات القراءة دون إنترنت.
             </p>
-            <div style={{ padding: 12, background: "#1a1a1a", borderRadius: 16, border: "2px solid var(--gold-base, #b8962e)" }}>
+            <div style={{ padding: 10, background: "#ffffff", borderRadius: 16, border: "3px solid var(--gold-base, #b8962e)" }}>
               <canvas ref={offlineCanvasRef} style={{ display: "block", borderRadius: 8 }} />
             </div>
             <button
