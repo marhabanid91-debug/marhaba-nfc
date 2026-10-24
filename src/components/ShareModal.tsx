@@ -203,7 +203,7 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
 
         {/* رمز البطاقة (أونلاين) */}
         <div style={{ padding: 10, background: "#ffffff", borderRadius: 16, border: "3px solid var(--gold-base, #b8962e)", boxShadow: "0 0 24px rgba(184,150,46,0.3)" }}>
-          <canvas ref={canvasRef} style={{ display: "block", width: 280, height: 280, borderRadius: 8 }} />
+          <canvas ref={canvasRef} style={{ display: "block", width: "min(60vw, 220px)", height: "min(60vw, 220px)", borderRadius: 8 }} />
         </div>
 
         {/* رابط البطاقة */}
@@ -258,7 +258,7 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
               البيانات ثابتة وقت الطباعة، فإن تغيّر الرقم يُنشأ رمز جديد. تتحكم في ما يظهر من الإعدادات ← بيانات القراءة دون إنترنت.
             </p>
             <div style={{ padding: 10, background: "#ffffff", borderRadius: 16, border: "3px solid var(--gold-base, #b8962e)" }}>
-              <canvas ref={offlineCanvasRef} style={{ display: "block", width: 280, height: 280, borderRadius: 8 }} />
+              <canvas ref={offlineCanvasRef} style={{ display: "block", width: "min(60vw, 220px)", height: "min(60vw, 220px)", borderRadius: 8 }} />
             </div>
             <button
               onClick={downloadOfflineQR}
