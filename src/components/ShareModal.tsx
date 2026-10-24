@@ -39,11 +39,50 @@ function buildOfflineVCard(identity: Identity | undefined, name: string, pageUrl
   return lines.join("\n");
 }
 
+/** يرسم رمز QR بتصحيح أخطاء عالٍ وشعار مرحبا في المنتصف مع عبارة توضيحية (عربي/إنجليزي) */
+async function drawBadgedQR(canvas: HTMLCanvasElement, text: string, ar: string, en: string, isCancelled: () => boolean) {
+  await QRCode.toCanvas(canvas, text, {
+    width: 320,
+    margin: 2,
+    errorCorrectionLevel: "H",
+    color: { dark: "#1a1a1a", light: "#ffffff" }, // الوضع القياسي ليقرأه أي جوال
+  });
+  if (isCancelled()) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  const size = 92;
+  const k = size / 84;
+  const x = (canvas.width - size) / 2;
+  const y = (canvas.height - size) / 2;
+  const draw = (img?: HTMLImageElement) => {
+    if (isCancelled()) return;
+    ctx.fillStyle = "#1a1a1a";
+    ctx.strokeStyle = "#b8962e";
+    ctx.lineWidth = 3 * k;
+    ctx.beginPath();
+    ctx.roundRect(x, y, size, size, 14 * k);
+    ctx.fill();
+    ctx.stroke();
+    if (img) ctx.drawImage(img, x + (size - 38 * k) / 2, y + 8 * k, 38 * k, 38 * k);
+    ctx.fillStyle = "#e6c35a";
+    ctx.font = `bold ${13 * k}px sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(ar, x + size / 2, y + size - 17 * k);
+    ctx.font = `bold ${10 * k}px sans-serif`;
+    ctx.fillStyle = "#b8962e";
+    ctx.fillText(en, x + size / 2, y + size - 6 * k);
+  };
+  const img = new Image();
+  img.onload = () => draw(img);
+  img.onerror = () => draw();
+  img.src = marhabaLogo;
+}
+
 export default function ShareModal({ identityName, serialNumber, identity, onClose }: ShareModalProps) {
   const { t } = useApp();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [copied, setCopied] = useState(false);
-  const [qrDataUrl, setQrDataUrl] = useState("");
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const offlineCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // البطاقات الجديدة: ?c=الرمز العشوائي، والقديمة: ?serial=
@@ -59,47 +98,17 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
     const c = offlineCanvasRef.current;
     if (!c || !vcard) return;
     let cancelled = false;
-    QRCode.toCanvas(c, vcard, {
-      width: 320,
-      margin: 2,
-      errorCorrectionLevel: "H", // تصحيح أخطاء عالٍ ليتحمّل الشعار في المنتصف
-      color: { dark: "#1a1a1a", light: "#ffffff" }, // الوضع القياسي ليقرأه أي جوال
-    }).then(() => {
-      if (cancelled) return;
-      const ctx = c.getContext("2d");
-      if (!ctx) return;
-      const k = 92 / 84;
-      const size = 92;
-      const x = (c.width - size) / 2;
-      const y = (c.height - size) / 2;
-      const draw = (img?: HTMLImageElement) => {
-        if (cancelled) return;
-        ctx.fillStyle = "#1a1a1a";
-        ctx.strokeStyle = "#b8962e";
-        ctx.lineWidth = 3 * k;
-        ctx.beginPath();
-        ctx.roundRect(x, y, size, size, 14 * k);
-        ctx.fill();
-        ctx.stroke();
-        if (img) ctx.drawImage(img, x + (size - 38 * k) / 2, y + 8 * k, 38 * k, 38 * k);
-        ctx.fillStyle = "#e6c35a";
-        ctx.font = `bold ${13 * k}px sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("دون إنترنت", x + size / 2, y + size - 17 * k);
-        ctx.font = `bold ${10 * k}px sans-serif`;
-        ctx.fillStyle = "#b8962e";
-        ctx.fillText("OFFLINE", x + size / 2, y + size - 6 * k);
-      };
-      const img = new Image();
-      img.onload = () => draw(img);
-      img.onerror = () => draw();
-      img.src = marhabaLogo;
-    });
-    return () => {
-      cancelled = true;
-    };
+    drawBadgedQR(c, vcard, "أوفلاين", "OFFLINE", () => cancelled);
+    return () => { cancelled = true; };
   }, [vcard]);
+
+  useEffect(() => {
+    const c = canvasRef.current;
+    if (!c) return;
+    let cancelled = false;
+    drawBadgedQR(c, url, "أونلاين", "ONLINE", () => cancelled);
+    return () => { cancelled = true; };
+  }, [url]);
 
   const shareOfflineQR = () => {
     const c = offlineCanvasRef.current;
@@ -121,6 +130,15 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
     }, "image/png");
   };
 
+  const downloadQR = () => {
+    const c = canvasRef.current;
+    if (!c) return;
+    const a = document.createElement("a");
+    a.href = c.toDataURL("image/png");
+    a.download = `marhaba-${serialNumber}.png`;
+    a.click();
+  };
+
   const downloadOfflineQR = () => {
     const c = offlineCanvasRef.current;
     if (!c) return;
@@ -130,21 +148,6 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
     a.click();
   };
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    QRCode.toCanvas(canvas, url, {
-      width: 240,
-      margin: 2,
-      color: { dark: "#b8962e", light: "#1a1a1a" },
-    });
-    QRCode.toDataURL(url, {
-      width: 240,
-      margin: 2,
-      color: { dark: "#b8962e", light: "#1a1a1a" },
-    }).then(setQrDataUrl);
-  }, [url]);
-
   const copyLink = async () => {
     await navigator.clipboard.writeText(url);
     setCopied(true);
@@ -153,16 +156,14 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
 
   const nativeShare = async () => {
     if (navigator.share) {
-      await navigator.share({ title: identityName, url });
+      try {
+        await navigator.share({ title: identityName, url });
+      } catch {
+        /* أُلغيت المشاركة */
+      }
+    } else {
+      await copyLink();
     }
-  };
-
-  const downloadQR = () => {
-    if (!qrDataUrl) return;
-    const a = document.createElement("a");
-    a.href = qrDataUrl;
-    a.download = `marhaba-${serialNumber}.png`;
-    a.click();
   };
 
   return (
@@ -179,12 +180,12 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
           background: "var(--card-bg)",
           borderRadius: "24px 24px 0 0",
           width: "100%", maxWidth: 480,
-          padding: "28px 24px 40px",
-          maxHeight: "92vh", overflowY: "auto", WebkitOverflowScrolling: "touch",
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 20,
+          maxHeight: "92dvh", overflowY: "auto", overscrollBehavior: "contain",
+          WebkitOverflowScrolling: "touch", touchAction: "pan-y",
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        <div style={{ padding: "28px 24px 40px", display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
         {/* Handle */}
         <div style={{ width: 40, height: 4, borderRadius: 2, background: "var(--border-color)", marginBottom: 4 }} />
 
@@ -195,26 +196,57 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
           {serialNumber}
         </p>
 
-        {/* QR Canvas */}
-        <div style={{
-          padding: 12,
-          background: "#1a1a1a",
-          borderRadius: 16,
-          border: "2px solid var(--gold-base, #b8962e)",
-          boxShadow: "0 0 24px rgba(184,150,46,0.3)",
-        }}>
+        {/* رمز البطاقة (أونلاين) */}
+        <div style={{ padding: 10, background: "#ffffff", borderRadius: 16, border: "3px solid var(--gold-base, #b8962e)", boxShadow: "0 0 24px rgba(184,150,46,0.3)" }}>
           <canvas ref={canvasRef} style={{ display: "block", borderRadius: 8 }} />
         </div>
 
-        <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "-8px 0 0", textAlign: "center" }}>
+        {/* رابط البطاقة */}
+        <p style={{ fontSize: 12, color: "var(--text-muted)", margin: 0, textAlign: "center", wordBreak: "break-all" }}>
           {url}
         </p>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, width: "100%" }}>
+          <button
+            onClick={copyLink}
+            style={{
+              padding: "12px 0", borderRadius: 12, border: "1px solid var(--border-color)",
+              background: copied ? "var(--gold-base, #b8962e)" : "var(--card-alt-bg, var(--card-bg))", color: copied ? "#000" : "var(--text-primary)",
+              fontWeight: 600, fontSize: 14, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            }}
+          >
+            {copied ? "✓" : "🔗"} {copied ? (t("copied") || "Copied!") : (t("copyLink") || "Copy Link")}
+          </button>
+          <button
+            onClick={nativeShare}
+            style={{
+              padding: "12px 0", borderRadius: 12, border: "1px solid var(--border-color)",
+              background: "var(--card-alt-bg, var(--card-bg))", color: "var(--text-primary)",
+              fontWeight: 600, fontSize: 14, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            }}
+          >
+            ↗ {t("share") || "Share"}
+          </button>
+          <button
+            onClick={downloadQR}
+            style={{
+              padding: "12px 0", borderRadius: 12, border: "1px solid var(--border-color)",
+              background: "var(--card-alt-bg, var(--card-bg))", color: "var(--text-primary)",
+              fontWeight: 600, fontSize: 14, cursor: "pointer", gridColumn: "1 / -1",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            }}
+          >
+            ⬇ {t("downloadQR") || "Download QR"}
+          </button>
+        </div>
 
         {/* QR دون إنترنت */}
         {vcard && (
           <div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: 10, paddingTop: 4 }}>
             <p style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
-              📵 رمز QR يعمل دون إنترنت
+              📵 رمز QR أوفلاين (يعمل دون إنترنت)
             </p>
             <p style={{ fontSize: 12, color: "var(--text-muted)", margin: 0, textAlign: "center", lineHeight: 1.7 }}>
               من يمسحه بكاميرا جواله يرى الاسم والرقم مع زر «حفظ جهة اتصال» حتى بدون إنترنت.
@@ -231,7 +263,7 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
                 fontWeight: 600, fontSize: 14, cursor: "pointer", width: "100%",
               }}
             >
-              ⬇ تحميل رمز QR دون إنترنت
+              ⬇ تحميل رمز QR أوفلاين
             </button>
             <button
               onClick={shareOfflineQR}
@@ -241,67 +273,11 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
                 fontWeight: 600, fontSize: 14, cursor: "pointer", width: "100%",
               }}
             >
-              📤 مشاركة رمز QR دون إنترنت
+              📤 مشاركة رمز QR أوفلاين
             </button>
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, width: "100%" }}>
-          <button
-            onClick={copyLink}
-            style={{
-              padding: "12px 0", borderRadius: 12, border: "1px solid var(--border-color)",
-              background: copied ? "var(--gold-base, #b8962e)" : "var(--card-alt-bg, var(--card-bg))",
-              color: copied ? "#000" : "var(--text-primary)",
-              fontWeight: 600, fontSize: 14, cursor: "pointer", transition: "all 0.2s",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            }}
-          >
-            {copied ? "✓" : "🔗"} {copied ? (t("copied") || "Copied!") : (t("copyLink") || "Copy Link")}
-          </button>
-
-          {typeof navigator !== "undefined" && "share" in navigator ? (
-            <button
-              onClick={nativeShare}
-              style={{
-                padding: "12px 0", borderRadius: 12, border: "1px solid var(--border-color)",
-                background: "var(--card-alt-bg, var(--card-bg))",
-                color: "var(--text-primary)",
-                fontWeight: 600, fontSize: 14, cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              }}
-            >
-              ↗ {t("share") || "Share"}
-            </button>
-          ) : (
-            <button
-              onClick={downloadQR}
-              style={{
-                padding: "12px 0", borderRadius: 12, border: "1px solid var(--border-color)",
-                background: "var(--card-alt-bg, var(--card-bg))",
-                color: "var(--text-primary)",
-                fontWeight: 600, fontSize: 14, cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              }}
-            >
-              ⬇ {t("downloadQR") || "Download QR"}
-            </button>
-          )}
-
-          <button
-            onClick={downloadQR}
-            style={{
-              padding: "12px 0", borderRadius: 12, border: "1px solid var(--border-color)",
-              background: "var(--card-alt-bg, var(--card-bg))",
-              color: "var(--text-primary)",
-              fontWeight: 600, fontSize: 14, cursor: "pointer",
-              gridColumn: "1 / -1",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-            }}
-          >
-            ⬇ {t("downloadQR") || "Download QR"}
-          </button>
         </div>
       </div>
     </div>
