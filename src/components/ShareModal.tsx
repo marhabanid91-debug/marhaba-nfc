@@ -40,10 +40,12 @@ function buildOfflineVCard(identity: Identity | undefined, name: string, pageUrl
   return lines.join("\n");
 }
 
-/** يرسم رمز QR بتصحيح أخطاء عالٍ وشعار مرحبا في المنتصف مع عبارة توضيحية (عربي/إنجليزي) */
-async function drawBadgedQR(canvas: HTMLCanvasElement, text: string, ar: string, en: string, isCancelled: () => boolean) {
+const QR_PX = 1200; // دقة عالية للطباعة؛ العرض داخل التطبيق يصغَّر بالـ CSS
+
+/** يرسم رمز QR بتصحيح أخطاء عالٍ وشعار مرحبا بارزاً في المنتصف مع كلمة عربية (أونلاين/أوفلاين) */
+async function drawBadgedQR(canvas: HTMLCanvasElement, text: string, label: string, isCancelled: () => boolean) {
   await QRCode.toCanvas(canvas, text, {
-    width: 320,
+    width: QR_PX,
     margin: 2,
     errorCorrectionLevel: "H",
     color: { dark: "#1a1a1a", light: "#ffffff" }, // الوضع القياسي ليقرأه أي جوال
@@ -51,28 +53,28 @@ async function drawBadgedQR(canvas: HTMLCanvasElement, text: string, ar: string,
   if (isCancelled()) return;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
-  const size = 92;
-  const k = size / 84;
-  const x = (canvas.width - size) / 2;
+  const w = canvas.width;
+  const size = w * 0.3; // 30% من العرض (≈9% من المساحة) ويتحمله تصحيح الأخطاء
+  const x = (w - size) / 2;
   const y = (canvas.height - size) / 2;
   const draw = (img?: HTMLImageElement) => {
     if (isCancelled()) return;
     ctx.fillStyle = "#1a1a1a";
     ctx.strokeStyle = "#b8962e";
-    ctx.lineWidth = 3 * k;
+    ctx.lineWidth = size * 0.035;
     ctx.beginPath();
-    ctx.roundRect(x, y, size, size, 14 * k);
+    ctx.roundRect(x, y, size, size, size * 0.15);
     ctx.fill();
     ctx.stroke();
-    if (img) ctx.drawImage(img, x + (size - 38 * k) / 2, y + 8 * k, 38 * k, 38 * k);
+    if (img) {
+      const ls = size * 0.62; // الشعار هو الأبرز
+      ctx.drawImage(img, x + (size - ls) / 2, y + size * 0.06, ls, ls);
+    }
     ctx.fillStyle = "#e6c35a";
-    ctx.font = `bold ${13 * k}px sans-serif`;
+    ctx.font = `bold ${size * 0.17}px sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(ar, x + size / 2, y + size - 17 * k);
-    ctx.font = `bold ${10 * k}px sans-serif`;
-    ctx.fillStyle = "#b8962e";
-    ctx.fillText(en, x + size / 2, y + size - 6 * k);
+    ctx.fillText(label, x + size / 2, y + size * 0.86);
   };
   const img = new Image();
   img.onload = () => draw(img);
@@ -99,7 +101,7 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
     const c = offlineCanvasRef.current;
     if (!c || !vcard) return;
     let cancelled = false;
-    drawBadgedQR(c, vcard, "أوفلاين", "OFFLINE", () => cancelled);
+    drawBadgedQR(c, vcard, "أوفلاين", () => cancelled);
     return () => { cancelled = true; };
   }, [vcard]);
 
@@ -107,7 +109,7 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
     const c = canvasRef.current;
     if (!c) return;
     let cancelled = false;
-    drawBadgedQR(c, url, "أونلاين", "ONLINE", () => cancelled);
+    drawBadgedQR(c, url, "أونلاين", () => cancelled);
     return () => { cancelled = true; };
   }, [url]);
 
@@ -201,7 +203,7 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
 
         {/* رمز البطاقة (أونلاين) */}
         <div style={{ padding: 10, background: "#ffffff", borderRadius: 16, border: "3px solid var(--gold-base, #b8962e)", boxShadow: "0 0 24px rgba(184,150,46,0.3)" }}>
-          <canvas ref={canvasRef} style={{ display: "block", borderRadius: 8 }} />
+          <canvas ref={canvasRef} style={{ display: "block", width: 280, height: 280, borderRadius: 8 }} />
         </div>
 
         {/* رابط البطاقة */}
@@ -256,7 +258,7 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
               البيانات ثابتة وقت الطباعة، فإن تغيّر الرقم يُنشأ رمز جديد. تتحكم في ما يظهر من الإعدادات ← بيانات القراءة دون إنترنت.
             </p>
             <div style={{ padding: 10, background: "#ffffff", borderRadius: 16, border: "3px solid var(--gold-base, #b8962e)" }}>
-              <canvas ref={offlineCanvasRef} style={{ display: "block", borderRadius: 8 }} />
+              <canvas ref={offlineCanvasRef} style={{ display: "block", width: 280, height: 280, borderRadius: 8 }} />
             </div>
             <button
               onClick={downloadOfflineQR}
