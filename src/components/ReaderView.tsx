@@ -4,7 +4,7 @@ import { useApp } from "../context/AppContext";
 import { ActiveMode } from "../types";
 import marhabaLogo from "../imports/marhaba-logo.png";
 import { LocationCard } from "./LocationFields";
-import { HIDE_SENSITIVE_FIELDS } from "../lib/flags";
+import { HIDE_SENSITIVE_FIELDS, HIDE_SOS_BUTTON } from "../lib/flags";
 import { noteLines } from "../lib/contactNotes";
 import { SocialIcon, socialName } from "./SocialIcon";
 
@@ -387,7 +387,7 @@ function EmergencyReader({ identity, color }: { identity: any; color: string }) 
 
       <NotifyFamily contacts={visibleContacts} name={d?.name ? truncateName(d.name) : undefined} lang={lang} />
 
-      <SOSButton contacts={visibleContacts} lang={lang} />
+      {!HIDE_SOS_BUTTON && <SOSButton contacts={visibleContacts} lang={lang} />}
 
       {/* Save Contact */}
       {d?.name && (
