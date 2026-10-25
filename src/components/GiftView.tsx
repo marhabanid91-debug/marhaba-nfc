@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { getGiftBySerial, toEmbed, safeCatalogUrl, giftItems, GiftPublic } from "../lib/gift";
 import marhabaLogo from "../imports/marhaba-logo.png";
 
+const WA_ACCESSORY_LINK = "https://wa.me/966500816798?text=" + encodeURIComponent("أرغب في طلب إكسسوارات وهدايا ذكية من مرحبا NFC");
+
 // صفحة الهدية التي يراها من يمسح بطاقة الهدية
 export default function GiftView() {
   const serial = new URLSearchParams(window.location.search).get("serial") || "";
@@ -91,6 +93,22 @@ export default function GiftView() {
             </a>
           )}
         </div>
+      )}
+
+      {loaded && (
+        <a
+          href={WA_ACCESSORY_LINK}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            width: "100%", maxWidth: 480, boxSizing: "border-box", display: "block",
+            marginTop: 8, padding: "14px 18px", borderRadius: 14, textAlign: "center",
+            background: "rgba(37,211,102,0.12)", border: "1px solid #25D366",
+            color: "#25D366", fontWeight: 700, fontSize: 15, textDecoration: "none", lineHeight: 1.6,
+          }}
+        >
+          🎁 أنشئ إكسسوارات وهدايا ذكية، اضغط هنا
+        </a>
       )}
 
       <a
