@@ -1,10 +1,9 @@
 // يحوّل رمز QR المرسوم إلى صورة PNG جاهزة للطباعة:
-// - هامش أبيض حول الرمز (فلا يظهر ضخماً عند فتح الصورة على الجوال)
-// - أبعاد فعلية مخزّنة داخل الملف (pHYs): الصورة كلها 6 سم، والرمز في منتصفها بحجم 4 سم،
-//   فتفتحها المطبعة أو Word أو Canva بالحجم الصحيح تلقائياً.
+// - هامش شفاف حول الرمز بحيث يشغل الرمز نحو 46% من عرض الصورة فقط
+//   (فيظهر صغيراً ومناسباً لشاشة الجوال عند فتح الصورة، وسهل الإدراج في Canva)
+// - أبعاد فعلية مخزّنة داخل الملف (pHYs): الرمز بالحجم المطلوب (3 سم للبطاقة، 4 سم للأوفلاين)، فتفتحها المطبعة أو Word أو Canva بالحجم الصحيح.
 
-const PAGE_CM = 6;
-const QR_CM = 4;
+const QR_SHARE = 0.46; // نسبة الرمز من عرض الصورة
 
 const crcTable = (() => {
   const t = new Uint32Array(256);
@@ -45,15 +44,14 @@ function withDpi(png: Uint8Array, pixelsPerMeter: number): Uint8Array {
   return out;
 }
 
-export async function makePrintPng(qrCanvas: HTMLCanvasElement): Promise<Blob> {
+/** qrCm: الحجم الفعلي المطلوب للرمز نفسه عند الطباعة بالسنتيمتر */
+export async function makePrintPng(qrCanvas: HTMLCanvasElement, qrCm = 3): Promise<Blob> {
   const qrPx = qrCanvas.width;
-  const pagePx = Math.round((qrPx * PAGE_CM) / QR_CM);
+  const pagePx = Math.round(qrPx / QR_SHARE);
   const page = document.createElement("canvas");
   page.width = pagePx;
   page.height = pagePx;
   const ctx = page.getContext("2d")!;
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, pagePx, pagePx);
   const off = Math.round((pagePx - qrPx) / 2);
   ctx.drawImage(qrCanvas, off, off);
 
@@ -61,6 +59,7 @@ export async function makePrintPng(qrCanvas: HTMLCanvasElement): Promise<Blob> {
     page.toBlob((b) => (b ? res(b) : rej(new Error("toBlob"))), "image/png")
   );
   const bytes = new Uint8Array(await blob.arrayBuffer());
-  const ppm = Math.round(pagePx / (PAGE_CM / 100));
+  const pageCm = qrCm / QR_SHARE;
+  const ppm = Math.round(pagePx / (pageCm / 100));
   return new Blob([withDpi(bytes, ppm) as unknown as BlobPart], { type: "image/png" });
 }
