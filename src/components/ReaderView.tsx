@@ -150,7 +150,7 @@ function ContactMeBtn({ ownerPhone, ownerName, lang }: { ownerPhone: string; own
       </button>
       {sent && !me && (
         <a
-          href="https://marhabanid.com"
+          href="https://welcome.marhabanid.com"
           style={{
             display: "block", marginTop: 10, padding: "12px", borderRadius: 12, textAlign: "center",
             background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.35)",
@@ -196,7 +196,7 @@ export default function ReaderView({ mode: defaultMode }: { mode?: ActiveMode })
   const mode: ActiveMode = identity?.activeMode || defaultMode || "business";
 
   const color = modeColors[mode];
-  const appUrl = "https://marhabanid.com";
+  const appUrl = "https://welcome.marhabanid.com";
 
   // يُرسم مباشرة في body (خارج أي حاوية بها transform/overflow) وبارتفاع الشاشة الفعلي
   // حتى يعمل التمرير بالإصبع للأعلى والأسفل على الجوال
