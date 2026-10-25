@@ -112,7 +112,7 @@ export default function GiftView() {
       )}
 
       <a
-        href="https://marhabanid.com"
+        href="https://welcome.marhabanid.com"
         style={{ marginTop: "auto", fontSize: 12, color: "var(--muted-foreground)", textDecoration: "none" }}
       >
         مرحبا NFC
