@@ -5,7 +5,6 @@ import { useApp } from "../context/AppContext";
 import { myCardToken } from "../lib/db";
 import { Identity } from "../types";
 import marhabaLogo from "../imports/marhaba-logo.png";
-import { makePrintPng } from "../lib/printPng";
 
 interface ShareModalProps {
   identityName: string;
@@ -41,7 +40,7 @@ function buildOfflineVCard(identity: Identity | undefined, name: string, pageUrl
   return lines.join("\n");
 }
 
-const QR_PX = 1200; // دقة عالية للطباعة؛ العرض داخل التطبيق يصغَّر بالـ CSS
+const QR_PX = 320; // حجم الصورة كما كانت؛ المقاس الفعلي للطباعة يُتفق عليه مع المطبعة
 
 /** يرسم رمز QR بتصحيح أخطاء عالٍ وشعار مرحبا بارزاً في المنتصف مع كلمة عربية (أونلاين/أوفلاين) */
 async function drawBadgedQR(canvas: HTMLCanvasElement, text: string, label: string, isCancelled: () => boolean) {
@@ -117,7 +116,8 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
   const shareOfflineQR = async () => {
     const c = offlineCanvasRef.current;
     if (!c) return;
-    const blob = await makePrintPng(c, 4);
+    const blob: Blob | null = await new Promise((res) => c.toBlob(res, "image/png"));
+    if (!blob) return;
     const file = new File([blob], `marhaba-offline-${serialNumber}.png`, { type: "image/png" });
     try {
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -141,16 +141,16 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
     setTimeout(() => URL.revokeObjectURL(href), 5000);
   };
 
-  const downloadQR = async () => {
+  const downloadQR = () => {
     const c = canvasRef.current;
     if (!c) return;
-    saveBlob(await makePrintPng(c, 3), `marhaba-${serialNumber}.png`);
+    c.toBlob((blob) => blob && saveBlob(blob, `marhaba-${serialNumber}.png`), "image/png");
   };
 
-  const downloadOfflineQR = async () => {
+  const downloadOfflineQR = () => {
     const c = offlineCanvasRef.current;
     if (!c) return;
-    saveBlob(await makePrintPng(c, 4), `marhaba-offline-${serialNumber}.png`);
+    c.toBlob((blob) => blob && saveBlob(blob, `marhaba-offline-${serialNumber}.png`), "image/png");
   };
 
   const copyLink = async () => {
