@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import {
   loadUserIdentities, createIdentity, updateIdentityMode as dbUpdateMode,
   updateIdentityActive, deleteIdentityFromDB, loadProfile, upsertProfile,
-  activateCard, serialForToken, isTokenCard, SerialRecord, loadPublicIdentityBySerial, lookupSerial,
+  activateCard, serialForToken, SerialRecord, loadPublicIdentityBySerial, lookupSerial,
 } from "../lib/db";
 import { getGiftBySerial, claimGift } from "../lib/gift";
 
@@ -133,7 +133,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // البطاقات الجديدة تُفتح برمز عشوائي (?c=)، والبطاقات ذات الرمز لا تُفتح بالرقم التسلسلي
       const resolveSerial = async (): Promise<string | null> => {
         if (tokenFromUrl) return await serialForToken(tokenFromUrl);
-        if (await isTokenCard(rawSerialFromUrl!)) return null;
         return rawSerialFromUrl;
       };
       resolveSerial().then((serialFromUrl) => {
