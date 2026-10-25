@@ -117,7 +117,7 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
   const shareOfflineQR = async () => {
     const c = offlineCanvasRef.current;
     if (!c) return;
-    const blob = await makePrintPng(c);
+    const blob = await makePrintPng(c, 4);
     const file = new File([blob], `marhaba-offline-${serialNumber}.png`, { type: "image/png" });
     try {
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -144,13 +144,13 @@ export default function ShareModal({ identityName, serialNumber, identity, onClo
   const downloadQR = async () => {
     const c = canvasRef.current;
     if (!c) return;
-    saveBlob(await makePrintPng(c), `marhaba-${serialNumber}.png`);
+    saveBlob(await makePrintPng(c, 3), `marhaba-${serialNumber}.png`);
   };
 
   const downloadOfflineQR = async () => {
     const c = offlineCanvasRef.current;
     if (!c) return;
-    saveBlob(await makePrintPng(c), `marhaba-offline-${serialNumber}.png`);
+    saveBlob(await makePrintPng(c, 4), `marhaba-offline-${serialNumber}.png`);
   };
 
   const copyLink = async () => {
