@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useApp } from "../context/AppContext";
 import { ActiveMode } from "../types";
@@ -7,6 +7,8 @@ import { LocationCard } from "./LocationFields";
 import { HIDE_SENSITIVE_FIELDS, HIDE_SOS_BUTTON } from "../lib/flags";
 import { noteLines } from "../lib/contactNotes";
 import { SocialIcon, socialName } from "./SocialIcon";
+import { supabase } from "../lib/supabase";
+import { loadUserIdentities, myCardToken } from "../lib/db";
 
 // Hardcoded so the link is always valid even before useAppSettings loads
 const WA_ACCESSORY_LINK = "https://wa.me/966500816798?text=" + encodeURIComponent("أرغب في طلب اكسسوار لمنصة Marhaba NFC");
@@ -70,6 +72,96 @@ function ReaderAvatar({ photo, emoji, color }: { photo?: string; emoji: string; 
         <img src={photo} alt="" onError={() => setFailed(true)}
           style={{ width: "100%", height: "100%", objectFit: "cover" }} />
       ) : emoji}
+    </div>
+  );
+}
+
+// رقم واتساب بصيغة دولية: يُزال كل ما عدا الأرقام، و05xxxxxxxx تتحول إلى 9665xxxxxxxx
+function waNumber(raw: string): string {
+  let n = String(raw || "").replace(/[^0-9]/g, "");
+  if (n.startsWith("00")) n = n.slice(2);
+  if (n.length === 10 && n.startsWith("0")) n = "966" + n.slice(1);
+  return n;
+}
+
+// زر «تواصل معي»: يفتح واتساب برسالة جاهزة لصاحب البطاقة
+// - قارئ مسجّل في مرحبا: اسمه ورابط بطاقته تُرسل فوراً
+// - قارئ غير مسجّل: رسالة مناسبة، وبعد الإرسال تظهر دعوة لإنشاء بطاقته
+function ContactMeBtn({ ownerPhone, ownerName, lang }: { ownerPhone: string; ownerName?: string; lang: string }) {
+  const [me, setMe] = useState<{ name: string; link: string } | null>(null);
+  const [sent, setSent] = useState(false);
+
+  // نحضّر بيانات القارئ مسبقاً حتى يُفتح واتساب مباشرة عند الضغط (المتصفح يمنع النوافذ بعد انتظار)
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const user = data.session?.user;
+        if (!user) return;
+        const list = await loadUserIdentities(user.id);
+        const mine = list.find((i: any) => i.serialNumber) || list[0];
+        if (!mine) return;
+        const name = (mine as any).business?.name || (mine as any).name || "";
+        let link = "";
+        if (mine.serialNumber) {
+          const t = await myCardToken(mine.serialNumber);
+          link = t
+            ? `https://marhabanid.com/?c=${t}`
+            : `https://marhabanid.com/?serial=${encodeURIComponent(mine.serialNumber)}`;
+        }
+        if (alive && link) setMe({ name, link });
+      } catch { /* يبقى كزائر */ }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  const phone = waNumber(ownerPhone);
+  if (!phone) return null;
+
+  const send = () => {
+    const ar = lang === "ar";
+    const greet = ar
+      ? `السلام عليكم${ownerName ? " " + ownerName : ""}،`
+      : `Hello${ownerName ? " " + ownerName : ""},`;
+    const text = me
+      ? (ar
+          ? `${greet}\nأنا ${me.name || ""}، تعرفت عليك عبر بطاقتك الذكية من مرحبا ويسعدني التواصل معك.\nبطاقتي: ${me.link}`
+          : `${greet}\nI'm ${me.name || ""}. I met you through your Marhaba smart card and would love to connect.\nMy card: ${me.link}`)
+      : (ar
+          ? `${greet}\nتشرّفت بالتعرّف عليك عبر مسح بطاقتك من «مرحبا»، وهذا رقمي للتواصل 🤝`
+          : `${greet}\nIt was a pleasure meeting you. I scanned your Marhaba card, and this is my number to stay in touch 🤝`);
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
+    setSent(true);
+  };
+
+  return (
+    <div style={{ marginTop: 12 }}>
+      <button
+        onClick={send}
+        style={{
+          width: "100%", padding: "14px", borderRadius: 12,
+          background: "#25D366", border: "none", color: "#fff",
+          fontWeight: 800, fontSize: 15, cursor: "pointer", fontFamily: "inherit",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+        }}
+      >
+        💬 {lang === "ar" ? "تواصل معي" : "Contact me"}
+      </button>
+      {sent && !me && (
+        <a
+          href="https://marhabanid.com"
+          style={{
+            display: "block", marginTop: 10, padding: "12px", borderRadius: 12, textAlign: "center",
+            background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.35)",
+            color: "#c9a84c", fontWeight: 700, fontSize: 13, textDecoration: "none", lineHeight: 1.6,
+          }}
+        >
+          {lang === "ar"
+            ? "يمكنك مشاركة روابطك الاجتماعية بإنشاء بطاقتك، اضغط هنا"
+            : "You can share your social links with your own card. Tap here"}
+        </a>
+      )}
     </div>
   );
 }
@@ -476,6 +568,9 @@ function BusinessReader({ identity, color }: { identity: any; color: string }) {
 
       <LocationCard locations={d?.locations} />
 
+      {/* تواصل معي */}
+      {d?.phone && <ContactMeBtn ownerPhone={d.phone} ownerName={d?.name ? truncateName(d.name) : undefined} lang={lang} />}
+
       {/* Save Contact */}
       {d?.name && (
         <SaveContactBtn
@@ -585,12 +680,16 @@ function EventsReader({ identity, color }: { identity: any; color: string }) {
 
       <LocationCard locations={d?.locations} />
 
+      {/* تواصل معي: يستخدم رقم بطاقة الأعمال لنفس الهوية */}
+      {identity?.business?.phone && <ContactMeBtn ownerPhone={identity.business.phone} ownerName={d?.name ? truncateName(d.name) : undefined} lang={lang} />}
+
       {/* Save Contact */}
       {d?.name && (
         <SaveContactBtn
           lang={lang}
           onClick={() => downloadVCard({
             name: d.name,
+            phone: identity?.business?.phone,
             note: [d.eventName, d.eventLocation, d.status].filter(Boolean).join(" — "),
           })}
         />
