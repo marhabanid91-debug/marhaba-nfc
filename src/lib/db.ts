@@ -145,6 +145,11 @@ const defaultOffline = (): OfflineSettings => ({
 
 // ─── Identity loading ────────────────────────────────────────────────────────
 
+// إن كان اسم القسم فارغاً نستخدم اسم الهوية المسجّل عند إنشائها
+function withName<T extends { name: string }>(section: T, identityName?: string | null): T {
+  return section.name ? section : { ...section, name: identityName || "" };
+}
+
 export async function loadUserIdentities(userId: string): Promise<Identity[]> {
   const { data: identityRows, error } = await supabase
     .from("identities")
@@ -175,9 +180,9 @@ export async function loadUserIdentities(userId: string): Promise<Identity[]> {
       serialNumber: cardRow.data?.serial_number || row.serial_number || null,
       activeMode: (row.active_mode as ActiveMode) || "business",
       isActive: row.is_active ?? true,
-      emergency: emRow.data ? mapEmergencyFromDB(emRow.data, emContacts.data || []) : defaultEmergency(),
-      business: bizRow.data ? mapBusinessFromDB(bizRow.data) : defaultBusiness(),
-      events: evRow.data ? mapEventsFromDB(evRow.data) : defaultEvents(),
+      emergency: withName(emRow.data ? mapEmergencyFromDB(emRow.data, emContacts.data || []) : defaultEmergency(), row.name),
+      business: withName(bizRow.data ? mapBusinessFromDB(bizRow.data) : defaultBusiness(), row.name),
+      events: withName(evRow.data ? mapEventsFromDB(evRow.data) : defaultEvents(), row.name),
       offlineSettings: offRow.data
         ? { name: offRow.data.show_name, contactPhone: offRow.data.show_contact_phone, emergencyPhone: offRow.data.show_emergency_phone }
         : defaultOffline(),
@@ -200,9 +205,9 @@ export async function createIdentity(userId: string, name: string): Promise<stri
 
   // Initialise sub-tables so they exist
   await Promise.allSettled([
-    supabase.from("emergency_data").insert({ identity_id: data.id }),
-    supabase.from("business_data").insert({ identity_id: data.id }),
-    supabase.from("events_data").insert({ identity_id: data.id }),
+    supabase.from("emergency_data").insert({ identity_id: data.id, name }),
+    supabase.from("business_data").insert({ identity_id: data.id, name }),
+    supabase.from("events_data").insert({ identity_id: data.id, name }),
     supabase.from("offline_preferences").insert({ identity_id: data.id }),
   ]);
 
