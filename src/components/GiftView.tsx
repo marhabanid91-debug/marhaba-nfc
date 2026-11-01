@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { getGiftBySerial, toEmbed, safeCatalogUrl, giftItems, GiftPublic } from "../lib/gift";
+import { getGiftBySerial, toEmbed, safeCatalogUrl, giftItems, cleanPromo, GiftPublic } from "../lib/gift";
 import marhabaLogo from "../imports/marhaba-logo.png";
 
-const WA_ACCESSORY_LINK = "https://wa.me/966500816798?text=" + encodeURIComponent("أرغب في طلب إكسسوارات وهدايا ذكية من مرحبا NFC");
+const LANDING_LINK = "https://welcome.marhabanid.com";
 
 // صفحة الهدية التي يراها من يمسح بطاقة الهدية
 export default function GiftView() {
@@ -19,6 +19,9 @@ export default function GiftView() {
 
   const items = giftItems(gift).map((it) => ({ ...it, embed: toEmbed(it.url) })).filter((it) => it.embed.kind !== "none");
   const catalog = safeCatalogUrl(gift?.gift_catalog);
+  const promo = cleanPromo(gift?.gift_promo);
+  // لا يظهر إلا ما أضافه المُهدي؛ الرسالة الافتراضية فقط إن كانت الهدية فارغة تماماً
+  const isEmpty = !gift?.gift_title && items.length === 0 && !catalog && !promo.follow && promo.offers.length === 0;
 
   return (
     <div
@@ -42,16 +45,16 @@ export default function GiftView() {
 
       {loaded && gift && (
         <div style={{ width: "100%", maxWidth: 480, textAlign: "center" }}>
-          <h2 style={{ margin: "4px 0 16px", fontSize: 22 }}>
-            {gift.gift_title || "هدية لك 🎁"}
-          </h2>
+          {gift.gift_title && (
+            <h2 style={{ margin: "4px 0 16px", fontSize: 22 }}>{gift.gift_title}</h2>
+          )}
 
-          {items.length === 0 && (
+          {isEmpty && (
             <div style={{
               background: "var(--card)", border: "1px solid var(--border)",
               borderRadius: 16, padding: 28, color: "var(--muted-foreground)", lineHeight: 1.8,
             }}>
-              هديتك في الطريق إليك 💛
+              هديتك قيد التجهيز 💛
               <br />
               ستظهر هنا قريباً.
             </div>
@@ -78,6 +81,56 @@ export default function GiftView() {
             </div>
           ))}
 
+          {promo.offers.length > 0 && (
+            <div style={{ marginTop: 22, textAlign: "right" }}>
+              <div style={{ fontWeight: 700, fontSize: 17, margin: "0 0 10px", textAlign: "center" }}>🎉 عروض وسحوبات</div>
+              {promo.offers.map((o, i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: "var(--card)", border: "1px solid var(--border)", borderRadius: 16,
+                    padding: 16, marginBottom: 12,
+                  }}
+                >
+                  {o.title && <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>{o.title}</div>}
+                  {o.how && (
+                    <div style={{ color: "var(--muted-foreground)", lineHeight: 1.9, fontSize: 14, whiteSpace: "pre-wrap" }}>
+                      {o.how}
+                    </div>
+                  )}
+                  {o.url && (
+                    <a
+                      href={o.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "block", marginTop: 12, padding: "11px 16px", borderRadius: 12, textAlign: "center",
+                        background: "var(--primary)", color: "#000", fontWeight: 700, fontSize: 15, textDecoration: "none",
+                      }}
+                    >
+                      شارك الآن ↗
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {promo.follow && (
+            <a
+              href={promo.follow.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "block", marginTop: 16, padding: "14px 18px", borderRadius: 14,
+                background: "transparent", border: "1px solid var(--primary)", color: "var(--primary)",
+                fontWeight: 700, textDecoration: "none", fontSize: 16,
+              }}
+            >
+              💛 {promo.follow.title ? `تابع ${promo.follow.title}` : "تابع المُهدي"}
+            </a>
+          )}
+
           {catalog && (
             <a
               href={catalog}
@@ -97,14 +150,14 @@ export default function GiftView() {
 
       {loaded && (
         <a
-          href={WA_ACCESSORY_LINK}
+          href={LANDING_LINK}
           target="_blank"
           rel="noopener noreferrer"
           style={{
             width: "100%", maxWidth: 480, boxSizing: "border-box", display: "block",
             marginTop: 8, padding: "14px 18px", borderRadius: 14, textAlign: "center",
-            background: "rgba(37,211,102,0.12)", border: "1px solid #25D366",
-            color: "#25D366", fontWeight: 700, fontSize: 15, textDecoration: "none", lineHeight: 1.6,
+            background: "rgba(201,168,76,0.12)", border: "1px solid var(--primary)",
+            color: "var(--primary)", fontWeight: 700, fontSize: 15, textDecoration: "none", lineHeight: 1.6,
           }}
         >
           🎁 أنشئ إكسسوارات وهدايا ذكية، اضغط هنا
