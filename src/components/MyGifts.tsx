@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { claimGift, loadMyGifts, setGiftLink, toEmbed, giftItems, GiftItem, MyGift } from "../lib/gift";
+import { claimGift, loadMyGifts, setGiftLink, setGiftPromo, toEmbed, giftItems, cleanPromo, GiftItem, GiftOffer, MyGift } from "../lib/gift";
 
 // قسم «هداياي» داخل حساب المُهدي: تفعيل بطاقة هدية وتبديل رابطها
 export default function MyGifts() {
@@ -86,6 +86,14 @@ function GiftRow({
   const [title, setTitle] = useState(g.gift_title || "");
   const [catalog, setCatalog] = useState(g.gift_catalog || "");
   const [msg, setMsg] = useState("");
+  const initPromo = cleanPromo(g.gift_promo);
+  const [followUrl, setFollowUrl] = useState(initPromo.follow?.url || "");
+  const [followTitle, setFollowTitle] = useState(initPromo.follow?.title || "");
+  const [offers, setOffers] = useState<GiftOffer[]>(initPromo.offers);
+  const hadPromo = !!(initPromo.follow || initPromo.offers.length);
+
+  const setOffer = (i: number, patch: Partial<GiftOffer>) =>
+    setOffers((prev) => prev.map((o, k) => (k === i ? { ...o, ...patch } : o)));
 
   const setItem = (i: number, patch: Partial<GiftItem>) =>
     setItems((prev) => prev.map((it, k) => (k === i ? { ...it, ...patch } : it)));
@@ -102,9 +110,37 @@ function GiftRow({
       setMsg("رابط الكتالوج يجب أن يبدأ بـ https://");
       return;
     }
+    const httpsOnly = /^https:\/\//i;
+    if (followUrl.trim() && !httpsOnly.test(followUrl.trim())) {
+      setMsg("رابط المتابعة يجب أن يبدأ بـ https://");
+      return;
+    }
+    const cleanOffers = offers
+      .map((o) => ({ title: (o.title || "").trim(), how: (o.how || "").trim(), url: (o.url || "").trim() }))
+      .filter((o) => o.title || o.how || o.url);
+    if (cleanOffers.some((o) => o.url && !httpsOnly.test(o.url))) {
+      setMsg("رابط العرض يجب أن يبدأ بـ https://");
+      return;
+    }
     const ok = await setGiftLink(g.serial, clean, title, catalog.trim());
-    setMsg(ok ? "تم التحديث، ستظهر الهدية الجديدة فوراً ✅" : "تعذّر الحفظ");
-    if (ok) onSaved();
+    if (!ok) {
+      setMsg("تعذّر الحفظ");
+      return;
+    }
+    const promo = {
+      follow: followUrl.trim() ? { url: followUrl.trim(), title: followTitle.trim() } : null,
+      offers: cleanOffers,
+    };
+    if (promo.follow || promo.offers.length || hadPromo) {
+      const ok2 = await setGiftPromo(g.serial, promo);
+      if (!ok2) {
+        setMsg("تم حفظ الهدية، لكن تعذّر حفظ المتابعة والعروض (تأكدي من تشغيل ملف gift-promo.sql)");
+        onSaved();
+        return;
+      }
+    }
+    setMsg("تم التحديث، ستظهر الهدية الجديدة فوراً ✅");
+    onSaved();
   }
 
   return (
@@ -153,6 +189,75 @@ function GiftRow({
         placeholder="رابط الكتالوج (اختياري) https://…"
         style={{ ...inputStyle, direction: "ltr", marginTop: 8 }}
       />
+
+      <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
+        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>💛 رابط المتابعة (اختياري)</div>
+        <div style={{ fontSize: 12, color: "var(--muted-foreground)", marginBottom: 8, lineHeight: 1.7 }}>
+          ضعي رابط صفحتك في مرحبا (شخص أو فعالية أو متجر) ليتابعك من أُهديت له الهدية.
+        </div>
+        <input
+          value={followUrl}
+          onChange={(e) => setFollowUrl(e.target.value)}
+          placeholder="https://marhabanid.com/?c=…"
+          style={{ ...inputStyle, direction: "ltr", marginBottom: 6 }}
+        />
+        <input
+          value={followTitle}
+          onChange={(e) => setFollowTitle(e.target.value)}
+          placeholder="اسمك أو اسم الفعالية (مثال: معرض تجار)"
+          maxLength={80}
+          style={inputStyle}
+        />
+      </div>
+
+      <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
+        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>🎉 عروض وسحوبات (اختياري)</div>
+        {offers.map((o, i) => (
+          <div key={i} style={{ border: "1px dashed var(--border-strong)", borderRadius: 10, padding: 10, marginBottom: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <span style={{ fontSize: 12, color: "var(--muted-foreground)" }}>عرض {i + 1}</span>
+              <button
+                onClick={() => setOffers((prev) => prev.filter((_, k) => k !== i))}
+                style={{ background: "none", border: "none", color: "var(--muted-foreground)", cursor: "pointer", fontSize: 16 }}
+                aria-label="حذف"
+              >✕</button>
+            </div>
+            <input
+              value={o.title}
+              onChange={(e) => setOffer(i, { title: e.target.value })}
+              placeholder="عنوان العرض أو السحب (مثال: سحب على جوال)"
+              maxLength={80}
+              style={{ ...inputStyle, marginBottom: 6 }}
+            />
+            <textarea
+              value={o.how || ""}
+              onChange={(e) => setOffer(i, { how: e.target.value })}
+              placeholder="طريقة المشاركة (مثال: تابعينا وشاركي المنشور وعلّمي ٣ من صديقاتك)"
+              maxLength={600}
+              rows={3}
+              style={{ ...inputStyle, marginBottom: 6, resize: "vertical" }}
+            />
+            <input
+              value={o.url || ""}
+              onChange={(e) => setOffer(i, { url: e.target.value })}
+              placeholder="رابط المشاركة (اختياري) https://…"
+              style={{ ...inputStyle, direction: "ltr" }}
+            />
+          </div>
+        ))}
+        {offers.length < 20 && (
+          <button
+            onClick={() => setOffers((prev) => [...prev, { title: "", how: "", url: "" }])}
+            style={{
+              width: "100%", padding: "9px", borderRadius: 10, cursor: "pointer", fontFamily: "inherit",
+              background: "transparent", border: "1px dashed var(--primary)", color: "var(--primary)", fontWeight: 600,
+            }}
+          >
+            ➕ إضافة عرض أو سحب
+          </button>
+        )}
+      </div>
+
       <button
         onClick={save}
         style={{
