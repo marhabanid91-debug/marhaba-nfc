@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getGiftBySerial, toEmbed, safeCatalogUrl, giftItems, cleanPromo, GiftPublic } from "../lib/gift";
 import marhabaLogo from "../imports/marhaba-logo.png";
+import { trackOpen, trackClick } from "../lib/stats";
 
 const LANDING_LINK = "https://welcome.marhabanid.com";
 
@@ -21,6 +22,13 @@ export default function GiftView() {
   const catalog = safeCatalogUrl(gift?.gift_catalog);
   const promo = cleanPromo(gift?.gift_promo);
   // لا يظهر إلا ما أضافه المُهدي؛ الرسالة الافتراضية فقط إن كانت الهدية فارغة تماماً
+  const statSerial = gift?.serial || null;
+  useEffect(() => {
+    if (statSerial) trackOpen("gift", statSerial);
+  }, [statSerial]);
+  const hit = (metric: string) => () => {
+    if (statSerial) trackClick("gift", statSerial, metric);
+  };
   const isEmpty = !gift?.gift_title && items.length === 0 && !catalog && !promo.follow && promo.offers.length === 0;
 
   return (
@@ -101,6 +109,7 @@ export default function GiftView() {
                   {o.url && (
                     <a
                       href={o.url}
+                      onClick={hit(`offer:${i}`)}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
@@ -119,6 +128,7 @@ export default function GiftView() {
           {promo.follow && (
             <a
               href={promo.follow.url}
+              onClick={hit("follow")}
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -134,6 +144,7 @@ export default function GiftView() {
           {catalog && (
             <a
               href={catalog}
+              onClick={hit("catalog")}
               target="_blank"
               rel="noopener noreferrer"
               style={{
