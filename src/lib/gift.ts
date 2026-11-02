@@ -71,6 +71,38 @@ export function giftItems(g: { gift_items?: GiftItem[] | null; gift_url?: string
   return g.gift_url ? [{ url: g.gift_url }] : [];
 }
 
+/** صفحة المُهدي للمتابعة (مثلاً صفحة مرحبا لشخص أو فعالية) */
+export interface GiftFollow {
+  url: string;
+  title?: string;
+}
+
+/** عرض أو سحب: عنوان + طريقة المشاركة + رابط اختياري */
+export interface GiftOffer {
+  title: string;
+  how?: string;
+  url?: string;
+}
+
+export interface GiftPromo {
+  follow?: GiftFollow | null;
+  offers?: GiftOffer[] | null;
+}
+
+/** تنظيف الإضافات للعرض: روابط https فقط، وحذف العناصر الفارغة */
+export function cleanPromo(p: GiftPromo | null | undefined): { follow: { url: string; title: string } | null; offers: GiftOffer[] } {
+  const furl = safeCatalogUrl(p?.follow?.url);
+  const follow = furl ? { url: furl, title: (p?.follow?.title || "").trim() } : null;
+  const offers = (Array.isArray(p?.offers) ? p!.offers! : [])
+    .map((o) => ({
+      title: (o?.title || "").trim(),
+      how: (o?.how || "").trim(),
+      url: safeCatalogUrl(o?.url) || "",
+    }))
+    .filter((o) => o.title || o.how || o.url);
+  return { follow, offers };
+}
+
 export interface GiftPublic {
   serial: string;
   status: "available" | "linked";
@@ -78,6 +110,7 @@ export interface GiftPublic {
   gift_url: string | null;
   gift_catalog: string | null;
   gift_items: GiftItem[] | null;
+  gift_promo?: GiftPromo | null;
 }
 
 /** رابط الكتالوج: https فقط، يُفتح في تبويب جديد */
@@ -94,13 +127,15 @@ export function safeCatalogUrl(raw: string | null | undefined): string | null {
 /** تعيد الهدية إن كان الرمز بطاقة هدية، وإلا null. لا ترمي أخطاء حتى لا تعطل التطبيق. */
 export async function getGiftBySerial(rawSerial: string): Promise<GiftPublic | null> {
   try {
-    const { data, error } = await supabase
-      .from("gift_public")
-      .select("serial, status, gift_title, gift_url, gift_catalog, gift_items")
-      .ilike("serial", rawSerial.trim())
-      .maybeSingle();
+    const q = (cols: string) =>
+      supabase.from("gift_public").select(cols).ilike("serial", rawSerial.trim()).maybeSingle();
+    let { data, error } = await q("serial, status, gift_title, gift_url, gift_catalog, gift_items, gift_promo");
+    if (error) {
+      // قبل تشغيل ملف SQL الجديد: اقرأ الأعمدة القديمة حتى لا تتعطل صفحة الهدية
+      ({ data, error } = await q("serial, status, gift_title, gift_url, gift_catalog, gift_items"));
+    }
     if (error || !data) return null;
-    return data as GiftPublic;
+    return data as unknown as GiftPublic;
   } catch {
     return null;
   }
@@ -123,12 +158,19 @@ export async function setGiftLink(serial: string, items: GiftItem[], title: stri
   return !error && data === true;
 }
 
+/** حفظ الإضافات: رابط المتابعة والعروض (للمُهدي مالك الحساب فقط). */
+export async function setGiftPromo(serial: string, promo: { follow: GiftFollow | null; offers: GiftOffer[] }): Promise<boolean> {
+  const { data, error } = await supabase.rpc("set_gift_promo", { p_serial: serial, p_promo: promo });
+  return !error && data === true;
+}
+
 export interface MyGift {
   serial: string;
   gift_title: string | null;
   gift_url: string | null;
   gift_catalog: string | null;
   gift_items: GiftItem[] | null;
+  gift_promo?: GiftPromo | null;
 }
 
 export async function loadMyGifts(): Promise<MyGift[]> {
