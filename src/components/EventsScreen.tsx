@@ -1,3 +1,4 @@
+import StatsBox from "./StatsBox";
 import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext";
 import { EventStatus, SocialLinks, LocationItem } from "../types";
@@ -114,6 +115,8 @@ export default function EventsScreen() {
             <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: 0 }}>{identityName}</p>
           </div>
         </div>
+
+        {identity?.id && <StatsBox kind="events" target={identity.id} />}
 
         {saved && (
           <div style={{
