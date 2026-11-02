@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import StatsBox from "./StatsBox";
 import { claimGift, loadMyGifts, setGiftLink, setGiftPromo, toEmbed, giftItems, cleanPromo, GiftItem, GiftOffer, MyGift } from "../lib/gift";
 
 // قسم «هداياي» داخل حساب المُهدي: تفعيل بطاقة هدية وتبديل رابطها
@@ -151,6 +152,11 @@ function GiftRow({
       <div style={{ fontSize: 12, color: "var(--muted-foreground)", marginBottom: 8, direction: "ltr", textAlign: "right" }}>
         {g.serial}
       </div>
+      <StatsBox
+        kind="gift"
+        target={g.serial}
+        labels={Object.fromEntries(initPromo.offers.map((o, i) => [`offer:${i}`, `🎉 ${o.title || `عرض ${i + 1}`}`]))}
+      />
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
