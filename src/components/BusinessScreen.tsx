@@ -1,3 +1,4 @@
+import StatsBox from "./StatsBox";
 import CountryPhoneInput from "./CountryPhoneInput";
 import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext";
@@ -116,6 +117,8 @@ export default function BusinessScreen() {
             <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: 0 }}>{identityName}</p>
           </div>
         </div>
+
+        {identity?.id && <StatsBox kind="business" target={identity.id} />}
 
         {saved && (
           <div style={{
