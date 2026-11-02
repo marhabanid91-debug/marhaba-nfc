@@ -9,6 +9,7 @@ import { noteLines } from "../lib/contactNotes";
 import { SocialIcon, socialName } from "./SocialIcon";
 import { supabase } from "../lib/supabase";
 import { loadUserIdentities, myCardToken } from "../lib/db";
+import { trackOpen, trackClick, metricForHref } from "../lib/stats";
 
 // Hardcoded so the link is always valid even before useAppSettings loads
 const WA_ACCESSORY_LINK = "https://wa.me/966500816798?text=" + encodeURIComponent("أرغب في طلب اكسسوار لمنصة Marhaba NFC");
@@ -139,6 +140,7 @@ function ContactMeBtn({ ownerPhone, ownerName, lang }: { ownerPhone: string; own
     <div style={{ marginTop: 12 }}>
       <button
         onClick={send}
+        data-stat="contact"
         style={{
           width: "100%", padding: "14px", borderRadius: 12,
           background: "#25D366", border: "none", color: "#fff",
@@ -151,6 +153,7 @@ function ContactMeBtn({ ownerPhone, ownerName, lang }: { ownerPhone: string; own
       {sent && !me && (
         <a
           href="https://welcome.marhabanid.com"
+          data-nostat="1"
           style={{
             display: "block", marginTop: 10, padding: "12px", borderRadius: 12, textAlign: "center",
             background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.35)",
@@ -171,6 +174,7 @@ function SaveContactBtn({ onClick, lang }: { onClick: () => void; lang: string }
   return (
     <button
       onClick={() => { onClick(); setSaved(true); setTimeout(() => setSaved(false), 2500); }}
+      data-stat="save"
       style={{
         width: "100%", padding: "13px", borderRadius: 12, marginTop: 12,
         background: saved ? "rgba(37,211,102,0.15)" : "var(--card)",
@@ -198,10 +202,29 @@ export default function ReaderView({ mode: defaultMode }: { mode?: ActiveMode })
   const color = modeColors[mode];
   const appUrl = "https://welcome.marhabanid.com";
 
+  // إحصائيات للمالك: فتح الصفحة والضغطات (الأعمال والفعاليات فقط، لا الطوارئ)
+  const statKind = mode === "business" || mode === "events" ? mode : null;
+  useEffect(() => {
+    if (statKind && identity?.id) trackOpen(statKind, identity.id);
+  }, [statKind, identity?.id]);
+  const onStatClick = (e: React.MouseEvent) => {
+    if (!statKind || !identity?.id) return;
+    const el = e.target as HTMLElement;
+    if (el.closest("[data-nostat]")) return;
+    const tagged = el.closest("[data-stat]");
+    if (tagged) {
+      trackClick(statKind, identity.id, tagged.getAttribute("data-stat") || "");
+      return;
+    }
+    const m = metricForHref(el.closest("a")?.getAttribute("href"));
+    if (m) trackClick(statKind, identity.id, m);
+  };
+
   // يُرسم مباشرة في body (خارج أي حاوية بها transform/overflow) وبارتفاع الشاشة الفعلي
   // حتى يعمل التمرير بالإصبع للأعلى والأسفل على الجوال
   return createPortal(
     <div
+      onClickCapture={onStatClick}
       style={{
         position: "fixed",
         top: 0, left: 0, right: 0, bottom: 0,
@@ -249,7 +272,7 @@ export default function ReaderView({ mode: defaultMode }: { mode?: ActiveMode })
         {mode === "events" && <EventsReader identity={identity} color={color} />}
 
         {/* CTA — two buttons */}
-        <div style={{
+        <div data-nostat="1" style={{
           marginTop: 32, padding: 24, borderRadius: 18,
           background: "var(--card)", border: "1px solid rgba(201,168,76,0.2)",
           textAlign: "center",
@@ -628,7 +651,7 @@ function EventsReader({ identity, color }: { identity: any; color: string }) {
           {d?.eventName && <div style={{ fontWeight: 700, marginBottom: 4 }}>{d.eventName}</div>}
           {d?.eventLocation && <div style={{ fontSize: 13, color: "var(--muted-foreground)" }}>📍 {d.eventLocation}</div>}
           {d?.ticketLink && (
-            <a href={d.ticketLink} style={{
+            <a href={d.ticketLink} data-stat="ticket" style={{
               display: "inline-block", marginTop: 10, padding: "7px 16px", borderRadius: 10,
               background: `${color}18`, border: `1px solid ${color}30`, color, fontSize: 13,
               textDecoration: "none", fontWeight: 600,
