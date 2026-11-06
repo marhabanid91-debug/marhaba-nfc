@@ -1,5 +1,6 @@
 import StatsBox from "./StatsBox";
 import CountryPhoneInput from "./CountryPhoneInput";
+import VaultEditor from "./VaultEditor";
 import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext";
 import { SocialIcon } from "./SocialIcon";
@@ -226,6 +227,12 @@ export default function BusinessScreen() {
             </div>
           </div>
         </div>
+
+        {identity?.id && (
+          <div style={{ marginTop: 18 }}>
+            <VaultEditor identityId={identity.id} scope="business" accent="#c9a84c" />
+          </div>
+        )}
 
         <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 10, paddingBottom: 20 }}>
           <button className="btn-primary" onClick={() => { save(); setScreen("events"); }}>{t("saveAndContinue")}</button>
