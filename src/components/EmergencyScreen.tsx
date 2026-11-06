@@ -1,4 +1,5 @@
 import CountryPhoneInput from "./CountryPhoneInput";
+import VaultEditor from "./VaultEditor";
 import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext";
 import { EmergencyContact, EmergencyVisibility, LocationItem } from "../types";
@@ -372,6 +373,12 @@ export default function EmergencyScreen() {
             ))}
           </div>
         </div>
+
+        {identity?.id && (
+          <div style={{ marginTop: 18 }}>
+            <VaultEditor identityId={identity.id} scope="emergency" accent="#e53e3e" />
+          </div>
+        )}
 
         {/* Actions */}
         <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 10, paddingBottom: 20 }}>
