@@ -1,4 +1,5 @@
 import StatsBox from "./StatsBox";
+import FlowHeader, { useFlow } from "./FlowHeader";
 import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext";
 import { EventStatus, SocialLinks, LocationItem } from "../types";
@@ -28,6 +29,7 @@ function normaliseUrl(raw: string, prefix: string): string {
 
 export default function EventsScreen() {
   const { t, lang, identities, setIdentities, activeIdentityId, setScreen, supabaseUser } = useApp();
+  const { creating, after, finish } = useFlow();
   const identity = identities.find((i) => i.id === activeIdentityId) || identities[0];
   const data = identity?.events;
 
@@ -104,6 +106,7 @@ export default function EventsScreen() {
   return (
     <div className="screen fade-in">
       <div style={{ padding: "24px 20px 0" }}>
+        <FlowHeader current="events" />
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
           <div style={{
             width: 40, height: 40, borderRadius: 12,
@@ -233,8 +236,8 @@ export default function EventsScreen() {
         </div>
 
         <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 10, paddingBottom: 20 }}>
-          <button className="btn-primary" onClick={() => { save(); setScreen("accessory"); }}>{t("saveAndContinue")}</button>
-          <button className="btn-ghost" onClick={() => setScreen("accessory")}>{t("skipNow")}</button>
+          <button className="btn-primary" onClick={() => { save(); after("done"); }}>{creating ? (lang === "ar" ? "حفظ وإنهاء ✓" : "Save & finish ✓") : (lang === "ar" ? "حفظ ورجوع" : "Save & back")}</button>
+          {creating && <button className="btn-ghost" onClick={finish}>{lang === "ar" ? "تخطّي وإنهاء" : "Skip & finish"}</button>}
         </div>
       </div>
     </div>
