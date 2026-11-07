@@ -58,7 +58,7 @@ export default function BottomNav() {
       paddingBottom: "env(safe-area-inset-bottom, 8px)",
       zIndex: 100,
     }}>
-      {navItems.map((item) => {
+      {navItems.filter((i) => ["home", "accessory", "settings"].includes(i.screen)).map((item) => {
         const isActive = screen === item.screen || (item.screen === "home" && screen === "identity-detail");
         const label = lang === "ar" ? item.labelAr : item.labelEn;
         return (
