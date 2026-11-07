@@ -1,4 +1,5 @@
 import StatsBox from "./StatsBox";
+import FlowHeader, { useFlow } from "./FlowHeader";
 import CountryPhoneInput from "./CountryPhoneInput";
 import VaultEditor from "./VaultEditor";
 import { useState, useRef } from "react";
@@ -32,6 +33,7 @@ function normaliseUrl(raw: string, prefix: string): string {
 
 export default function BusinessScreen() {
   const { t, lang, identities, setIdentities, activeIdentityId, setScreen, supabaseUser } = useApp();
+  const { creating, after } = useFlow();
   const identity = identities.find((i) => i.id === activeIdentityId) || identities[0];
   const data = identity?.business;
 
@@ -107,6 +109,7 @@ export default function BusinessScreen() {
   return (
     <div className="screen fade-in">
       <div style={{ padding: "24px 20px 0" }}>
+        <FlowHeader current="business" />
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
           <div style={{
             width: 40, height: 40, borderRadius: 12,
@@ -235,8 +238,8 @@ export default function BusinessScreen() {
         )}
 
         <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 10, paddingBottom: 20 }}>
-          <button className="btn-primary" onClick={() => { save(); setScreen("events"); }}>{t("saveAndContinue")}</button>
-          <button className="btn-ghost" onClick={() => setScreen("events")}>{t("skipNow")}</button>
+          <button className="btn-primary" onClick={() => { save(); after("events"); }}>{creating ? t("saveAndContinue") : (lang === "ar" ? "حفظ ورجوع" : "Save & back")}</button>
+          {creating && <button className="btn-ghost" onClick={() => setScreen("events")}>{t("skipNow")}</button>}
         </div>
       </div>
     </div>
