@@ -1,4 +1,5 @@
 import CountryPhoneInput from "./CountryPhoneInput";
+import FlowHeader, { useFlow } from "./FlowHeader";
 import VaultEditor from "./VaultEditor";
 import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext";
@@ -85,7 +86,8 @@ export default function EmergencyScreen() {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const saveAndContinue = () => { save(); setScreen("business"); };
+  const { creating, after } = useFlow();
+  const saveAndContinue = () => { save(); after("business"); };
 
   const addContact = () => {
     if (contacts.length >= MAX_CONTACTS) return;
@@ -108,6 +110,7 @@ export default function EmergencyScreen() {
   return (
     <div className="screen fade-in">
       <div style={{ padding: "24px 20px 0" }}>
+        <FlowHeader current="emergency" />
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
           <div style={{
@@ -382,8 +385,8 @@ export default function EmergencyScreen() {
 
         {/* Actions */}
         <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 10, paddingBottom: 20 }}>
-          <button className="btn-primary" onClick={saveAndContinue}>{t("saveAndContinue")}</button>
-          <button className="btn-ghost" onClick={() => setScreen("business")}>{t("skipNow")}</button>
+          <button className="btn-primary" onClick={saveAndContinue}>{creating ? t("saveAndContinue") : (lang === "ar" ? "حفظ ورجوع" : "Save & back")}</button>
+          {creating && <button className="btn-ghost" onClick={() => setScreen("business")}>{t("skipNow")}</button>}
         </div>
       </div>
     </div>
