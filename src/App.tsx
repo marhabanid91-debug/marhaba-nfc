@@ -14,9 +14,10 @@ import PasswordInputDemo from "./components/PasswordInputDemo";
 import CardScanScreen from "./components/CardScanScreen";
 import SerialGateScreen from "./components/SerialGateScreen";
 import GiftView from "./components/GiftView";
+import IdentityDetailScreen from "./components/IdentityDetailScreen";
 import marhabaLogo from "./imports/marhaba-logo.png";
 
-const appScreens = ["home", "emergency", "business", "events", "accessory", "settings"];
+const appScreens = ["home", "identity-detail", "emergency", "business", "events", "accessory", "settings"];
 
 function LoadingScreen() {
   return (
@@ -53,6 +54,7 @@ function AppShell() {
     <div className="app-shell">
       {screen === "auth" && <AuthScreen />}
       {screen === "home" && <HomeScreen />}
+      {screen === "identity-detail" && <IdentityDetailScreen />}
       {screen === "emergency" && <EmergencyScreen />}
       {screen === "business" && <BusinessScreen />}
       {screen === "events" && <EventsScreen />}
