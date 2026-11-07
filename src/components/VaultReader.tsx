@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useApp } from "../context/AppContext";
-import { unlockVault, vaultExists, VaultScope } from "../lib/vault";
+import { unlockVault, vaultExists, VaultScope, VAULT_NAME } from "../lib/vault";
 
 /** صندوق «الخزنة الرقمية» في صفحة القارئ: مغلق حتى إدخال الرمز، ولا يعرض أي عنوان قبله */
 export default function VaultReader({ identityId, scope, color }: { identityId?: string; scope: VaultScope; color: string }) {
@@ -11,7 +11,7 @@ export default function VaultReader({ identityId, scope, color }: { identityId?:
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [lockedUntil, setLockedUntil] = useState(0);
-  const [items, setItems] = useState<{ title: string; url: string }[] | null>(null);
+  const [items, setItems] = useState<{ title: string; url: string; one_time?: boolean }[] | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -46,7 +46,7 @@ export default function VaultReader({ identityId, scope, color }: { identityId?:
   return (
     // data-nostat: لا تُحتسب ضغطات روابط الخزنة في إحصائيات الأعمال
     <div data-nostat="1" dir={ar ? "rtl" : "ltr"} className="card" style={{ marginTop: 12, border: `1px solid ${color}40` }}>
-      <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>🔐 {ar ? "الخزنة الرقمية" : "Digital vault"}</div>
+      <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>🔐 {ar ? VAULT_NAME.ar : VAULT_NAME.en}</div>
 
       {items === null ? (
         <>
@@ -97,6 +97,11 @@ export default function VaultReader({ identityId, scope, color }: { identityId?:
               <span style={{ fontSize: 12 }}>{ar ? "فتح ↗" : "Open ↗"}</span>
             </a>
           ))}
+          {items.some((it) => it.one_time) && (
+            <p style={{ fontSize: 11.5, color: "var(--emergency)", margin: "4px 0 0", lineHeight: 1.6 }}>
+              {ar ? "⚠️ رمزك لمرة واحدة: افتح الرابط وانسخه الآن، فلن يظهر مرة أخرى." : "⚠️ One-time code: open the link now; it will not show again."}
+            </p>
+          )}
           <p style={{ fontSize: 11, color: "var(--muted-foreground)", margin: "4px 0 0" }}>
             {ar ? "أغلق الصفحة بعد الانتهاء حفاظاً على الخصوصية." : "Close the page when you are done."}
           </p>
