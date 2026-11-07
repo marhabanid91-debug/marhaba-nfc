@@ -3,7 +3,7 @@ import { supabase } from "./supabase";
 // ─── روابط الهدية: يوتيوب، جوجل درايف، أو رابط مباشر لصورة/فيديو/صوت ─────────
 
 export type Embed =
-  | { kind: "iframe"; src: string; tall?: boolean }
+  | { kind: "iframe"; src: string; tall?: boolean; portrait?: boolean }
   | { kind: "image"; src: string }
   | { kind: "video"; src: string }
   | { kind: "audio"; src: string }
@@ -32,6 +32,14 @@ export function toEmbed(raw: string | null | undefined): Embed {
       : { kind: "none" };
   }
 
+  // تيك توك: الرابط الكامل فقط (…/@user/video/رقم). الروابط المختصرة (vm.tiktok.com) لا يمكن تحويلها
+  if (host === "tiktok.com" || host.endsWith(".tiktok.com")) {
+    const id = u.pathname.match(/\/video\/(\d{8,25})/)?.[1];
+    return id
+      ? { kind: "iframe", src: `https://www.tiktok.com/embed/v2/${id}`, portrait: true }
+      : { kind: "none" };
+  }
+
   // جوجل درايف: مجلد كامل (يجب أن يكون «أي شخص لديه الرابط»)
   if (host === "drive.google.com") {
     const folderId = u.pathname.match(/\/folders\/([\w-]+)/)?.[1];
@@ -55,6 +63,16 @@ export function toEmbed(raw: string | null | undefined): Embed {
   if (/\.(mp3|m4a|wav|ogg)$/.test(p)) return { kind: "audio", src: u.href };
 
   return { kind: "none" };
+}
+
+/** هل هو رابط تيك توك مختصر أو غير كامل؟ (لرسالة خطأ أوضح) */
+export function isTikTokUnsupported(raw: string): boolean {
+  try {
+    const h = new URL(raw.trim()).hostname.replace(/^www\./, "");
+    return (h === "tiktok.com" || h.endsWith(".tiktok.com")) && toEmbed(raw).kind === "none";
+  } catch {
+    return false;
+  }
 }
 
 // ─── قاعدة البيانات ────────────────────────────────────────────────────────────
