@@ -17,7 +17,8 @@ export type Screen =
   | "privacy-policy"
   | "password-demo"
   | "card-scan"
-  | "serial-gate";
+  | "serial-gate"
+  | "identity-detail";
 
 export interface EmergencyContact {
   name: string;
