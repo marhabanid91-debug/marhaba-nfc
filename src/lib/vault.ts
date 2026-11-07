@@ -2,22 +2,33 @@ import { supabase } from "./supabase";
 
 export type VaultScope = "emergency" | "business";
 
+/** اسم الميزة في الواجهة: غيّره هنا فقط */
+export const VAULT_NAME = { ar: "المستندات المحمية", en: "Protected documents" };
+export const VAULT_HINT = { ar: "روابط تظهر برمز سري", en: "Links shown with a secret code" };
+
 export interface VaultEditItem {
   id?: string;
   title: string;
   url: string;
   code: string; // فارغ لعنصر قديم = يبقى رمزه الحالي
+  expires: string; // YYYY-MM-DD أو فارغ = بلا انتهاء
+  oneTime: boolean;
+  usedAt?: string | null;
 }
 
 export interface MyVault {
-  items: { id: string; title: string; url: string }[];
+  items: {
+    id: string; title: string; url: string;
+    expires_at: string | null; one_time: boolean; used_at: string | null;
+  }[];
   opens: number;
   last_open: string | null;
   fails_total: number;
+  log: { at: string; titles: string[] }[];
 }
 
 export type UnlockResult =
-  | { status: "ok"; items: { title: string; url: string }[] }
+  | { status: "ok"; items: { title: string; url: string; one_time?: boolean }[] }
   | { status: "wrong"; left: number }
   | { status: "locked"; retry: number }
   | { status: "none" }
@@ -68,6 +79,8 @@ export async function saveMyVault(identityId: string, scope: VaultScope, items: 
       ...(it.id ? { id: it.id } : {}),
       title: it.title.trim(),
       url: it.url.trim(),
+      expires_at: it.expires ? `${it.expires}T23:59:59+03:00` : null,
+      one_time: !!it.oneTime,
       ...(it.code ? { code: it.code } : {}),
     }));
     const { data, error } = await supabase.rpc("set_vault", {
