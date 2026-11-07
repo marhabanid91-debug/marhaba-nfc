@@ -376,7 +376,7 @@ export default function EmergencyScreen() {
 
         {identity?.id && (
           <div style={{ marginTop: 18 }}>
-            <VaultEditor identityId={identity.id} scope="emergency" accent="#e53e3e" />
+            <VaultEditor identityId={identity.id} scope="emergency" accent="#e53e3e" serial={identity.serialNumber} activeMode={identity.activeMode} />
           </div>
         )}
 
