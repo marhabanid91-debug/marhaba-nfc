@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useApp } from "../context/AppContext";
-import { loadMyVault, saveMyVault, MyVault, VaultEditItem, VaultScope } from "../lib/vault";
+import { loadMyVault, saveMyVault, MyVault, VaultEditItem, VaultScope, VAULT_NAME, VAULT_HINT } from "../lib/vault";
 
 const MAX_ITEMS = 10;
 
@@ -8,11 +8,16 @@ const ERRORS: Record<string, string> = {
   bad_title: "أدخل عنواناً لكل رابط (حتى 60 حرفاً)",
   bad_url: "الرابط يجب أن يبدأ بـ https://",
   bad_code: "الرمز السري من 6 إلى 32 حرفاً أو رقماً",
+  bad_expiry: "تاريخ الانتهاء غير صالح (الحد الأقصى 5 سنوات)",
   missing_code: "كل رابط جديد يحتاج رمزاً سرياً",
   too_many: "الحد الأقصى 10 روابط",
   forbidden: "غير مسموح",
   auth: "سجّل الدخول أولاً",
 };
+
+const todayRiyadh = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Riyadh" });
+const toYmd = (iso: string | null) =>
+  iso ? new Date(iso).toLocaleDateString("en-CA", { timeZone: "Asia/Riyadh" }) : "";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "لم تُفتح بعد";
@@ -37,7 +42,10 @@ export default function VaultEditor({ identityId, scope, accent }: { identityId:
   const load = () =>
     loadMyVault(identityId, scope).then((v) => {
       setInfo(v);
-      setItems((v?.items || []).map((it) => ({ id: it.id, title: it.title, url: it.url, code: "" })));
+      setItems((v?.items || []).map((it) => ({
+        id: it.id, title: it.title, url: it.url, code: "",
+        expires: toYmd(it.expires_at), oneTime: it.one_time, usedAt: it.used_at,
+      })));
       setLoaded(true);
     });
 
@@ -74,7 +82,8 @@ export default function VaultEditor({ identityId, scope, accent }: { identityId:
     <div dir={ar ? "rtl" : "ltr"} style={{
       border: `1px solid ${accent}40`, background: `${accent}0d`, borderRadius: 14, padding: 14,
     }}>
-      <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>🔐 {ar ? "الخزنة الرقمية" : "Digital vault"}</div>
+      <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 2 }}>🔐 {ar ? VAULT_NAME.ar : VAULT_NAME.en}</div>
+      <div style={{ fontSize: 11.5, color: accent, marginBottom: 6 }}>{ar ? VAULT_HINT.ar : VAULT_HINT.en}</div>
       <p style={{ fontSize: 12, color: "var(--muted-foreground)", lineHeight: 1.7, margin: "0 0 10px" }}>
         {ar
           ? "أضف روابط لمستنداتك الخاصة (سجل طبي، أكاديمي، وظيفي…). لا تظهر لمن يمسح البطاقة إلا بعد إدخال الرمز السري الذي تعطيه له. يمكنك وضع رمز مختلف لكل رابط."
@@ -124,8 +133,39 @@ export default function VaultEditor({ identityId, scope, accent }: { identityId:
             placeholder={it.id
               ? (ar ? "اتركه فارغاً للإبقاء على الرمز الحالي" : "Leave empty to keep current code")
               : (ar ? "رمز سري (6 أحرف أو أرقام على الأقل)" : "Secret code (min 6 characters)")}
-            style={{ direction: "ltr" }}
+            style={{ direction: "ltr", marginBottom: 8 }}
           />
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <label style={{ fontSize: 12, color: "var(--muted-foreground)", display: "flex", gap: 6, alignItems: "center" }}>
+              <input type="checkbox" checked={it.oneTime} onChange={(e) => setItem(i, { oneTime: e.target.checked })} style={{ width: "auto" }} />
+              {ar ? "رمز لمرة واحدة" : "One-time code"}
+            </label>
+            <label style={{ fontSize: 12, color: "var(--muted-foreground)", display: "flex", gap: 6, alignItems: "center" }}>
+              {ar ? "ينتهي في" : "Expires"}
+              <input
+                type="date"
+                value={it.expires}
+                min={todayRiyadh()}
+                onChange={(e) => setItem(i, { expires: e.target.value })}
+                style={{ width: "auto", direction: "ltr" }}
+              />
+              {it.expires && (
+                <button type="button" onClick={() => setItem(i, { expires: "" })} style={{
+                  background: "none", border: "none", color: "var(--muted-foreground)", cursor: "pointer", fontSize: 13,
+                }}>✕</button>
+              )}
+            </label>
+          </div>
+          {it.id && it.usedAt && it.oneTime && !it.code && (
+            <div style={{ fontSize: 11.5, color: "var(--emergency)", marginTop: 6 }}>
+              {ar ? "استُخدم هذا الرمز. اكتب رمزاً جديداً ليعمل من جديد." : "This code was used. Enter a new code to reactivate."}
+            </div>
+          )}
+          {it.id && it.expires && it.expires < todayRiyadh() && (
+            <div style={{ fontSize: 11.5, color: "var(--emergency)", marginTop: 6 }}>
+              {ar ? "انتهت صلاحية هذا الرابط. غيّر التاريخ ليعمل من جديد." : "This link has expired. Change the date to reactivate."}
+            </div>
+          )}
         </div>
       ))}
 
@@ -133,7 +173,7 @@ export default function VaultEditor({ identityId, scope, accent }: { identityId:
         <button
           type="button"
           disabled={items.length >= MAX_ITEMS}
-          onClick={() => setItems((p) => [...p, { title: "", url: "", code: "" }])}
+          onClick={() => setItems((p) => [...p, { title: "", url: "", code: "", expires: "", oneTime: false }])}
           style={{
             padding: "8px 14px", borderRadius: 10, fontFamily: "inherit", fontSize: 13, cursor: "pointer",
             background: "transparent", border: `1px dashed ${accent}`, color: accent, fontWeight: 600,
@@ -166,6 +206,17 @@ export default function VaultEditor({ identityId, scope, accent }: { identityId:
           🔓 {ar ? "مرات الفتح الناجحة" : "Successful opens"}: <b>{info.opens}</b>
           {" · "}{ar ? "آخر فتح" : "Last open"}: {fmtDate(info.last_open)}
           {info.fails_total > 0 && <> {" · "}⚠️ {ar ? "محاولات خاطئة" : "Wrong attempts"}: <b>{info.fails_total}</b></>}
+        </div>
+      )}
+
+      {info.log && info.log.length > 0 && (
+        <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted-foreground)" }}>
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>{ar ? "آخر عمليات الفتح" : "Recent opens"}</div>
+          {info.log.map((l, i) => (
+            <div key={i} style={{ padding: "3px 0", lineHeight: 1.6 }}>
+              • {fmtDate(l.at)}{l.titles?.length ? ` — ${l.titles.join("، ")}` : ""}
+            </div>
+          ))}
         </div>
       )}
     </div>
