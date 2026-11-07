@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import StatsBox from "./StatsBox";
-import { claimGift, loadMyGifts, setGiftLink, setGiftPromo, toEmbed, giftItems, cleanPromo, GiftItem, GiftOffer, MyGift } from "../lib/gift";
+import { copyText, shareLink } from "../lib/share";
+import { claimGift, loadMyGifts, setGiftLink, setGiftPromo, toEmbed, isTikTokUnsupported, giftItems, cleanPromo, GiftItem, GiftOffer, MyGift } from "../lib/gift";
 
 // قسم «هداياي» داخل حساب المُهدي: تفعيل بطاقة هدية وتبديل رابطها
 export default function MyGifts() {
@@ -77,6 +78,12 @@ export default function MyGifts() {
   );
 }
 
+const quickBtn: React.CSSProperties = {
+  flex: 1, padding: "8px 0", borderRadius: 10, cursor: "pointer", fontFamily: "inherit",
+  fontSize: 12.5, fontWeight: 600, background: "var(--card-elevated)",
+  border: "1px solid var(--border-strong)", color: "var(--foreground)",
+};
+
 function GiftRow({
   g, onSaved, inputStyle,
 }: { g: MyGift; onSaved: () => void; inputStyle: React.CSSProperties }) {
@@ -92,6 +99,20 @@ function GiftRow({
   const [followTitle, setFollowTitle] = useState(initPromo.follow?.title || "");
   const [offers, setOffers] = useState<GiftOffer[]>(initPromo.offers);
   const hadPromo = !!(initPromo.follow || initPromo.offers.length);
+  // بطاقة مصغّرة بعد الحفظ؛ تُفتح عند الضغط. الهدية الجديدة الفارغة تبدأ مفتوحة
+  const hasContent = !!(g.gift_title || giftItems(g).length || g.gift_catalog || hadPromo);
+  const [open, setOpen] = useState(!hasContent);
+  const cardName = title.trim() || giftItems(g).find((it) => it.title)?.title || (g.gift_catalog ? "كتالوج" : "هدية بدون عنوان");
+  const nLinks = items.filter((it) => it.url.trim()).length;
+  const giftUrl = `https://marhabanid.com/?serial=${encodeURIComponent(g.serial)}`;
+  const [linkMsg, setLinkMsg] = useState("");
+  const flash = (t: string) => { setLinkMsg(t); setTimeout(() => setLinkMsg(""), 2500); };
+  const copyGift = async () => flash((await copyText(giftUrl)) ? "تم نسخ الرابط ✅" : "تعذّر النسخ");
+  const shareGift = async () => {
+    const r = await shareLink(giftUrl, cardName);
+    if (r === "copied") flash("تم نسخ الرابط ✅");
+    if (r === "failed") flash("تعذّرت المشاركة");
+  };
 
   const setOffer = (i: number, patch: Partial<GiftOffer>) =>
     setOffers((prev) => prev.map((o, k) => (k === i ? { ...o, ...patch } : o)));
@@ -103,8 +124,12 @@ function GiftRow({
     const clean = items
       .map((it) => ({ url: it.url.trim(), title: (it.title || "").trim() }))
       .filter((it) => it.url);
+    if (clean.some((it) => isTikTokUnsupported(it.url))) {
+      setMsg("رابط تيك توك المختصر (vm.tiktok.com أو tiktok.com/t/…) لا يعمل. افتحي الفيديو في المتصفح وانسخي الرابط الكامل الذي يحتوي /video/ ثم الصقيه هنا.");
+      return;
+    }
     if (clean.some((it) => toEmbed(it.url).kind === "none")) {
-      setMsg("أحد الروابط غير مدعوم. استخدمي رابط يوتيوب أو ملف/مجلد جوجل درايف أو رابط مباشر لصورة/فيديو/صوت.");
+      setMsg("أحد الروابط غير مدعوم. استخدمي رابط يوتيوب أو تيك توك (الكامل) أو ملف/مجلد جوجل درايف أو رابط مباشر لصورة/فيديو/صوت.");
       return;
     }
     if (catalog && !/^https:\/\//i.test(catalog.trim())) {
@@ -142,16 +167,52 @@ function GiftRow({
     }
     setMsg("تم التحديث، ستظهر الهدية الجديدة فوراً ✅");
     onSaved();
+    setOpen(false);
+    setTimeout(() => setMsg(""), 4000);
   }
 
   return (
     <div style={{
-      background: "var(--card)", border: "1px solid var(--border)",
-      borderRadius: 14, padding: 14, margin: "12px 0",
+      background: "var(--card)", border: `1px solid ${open ? "var(--primary)" : "var(--border)"}`,
+      borderRadius: 14, margin: "12px 0", overflow: "hidden",
     }}>
-      <div style={{ fontSize: 12, color: "var(--muted-foreground)", marginBottom: 8, direction: "ltr", textAlign: "right" }}>
-        {g.serial}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
+          background: "none", border: "none", cursor: "pointer", fontFamily: "inherit",
+          color: "var(--foreground)", textAlign: "start",
+        }}
+      >
+        <span style={{
+          width: 40, height: 40, borderRadius: 12, flexShrink: 0, fontSize: 20,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: "rgba(201,168,76,0.14)", border: "1px solid rgba(201,168,76,0.35)",
+        }}>🎁</span>
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: "block", fontWeight: 700, fontSize: 15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {cardName}
+          </span>
+          <span style={{ display: "block", fontSize: 12, marginTop: 3, color: "var(--muted-foreground)" }}>
+            <span dir="ltr">{g.serial}</span>
+            {nLinks > 0 && <> · 🎁 {nLinks}</>}
+            {catalog.trim() && <> · 📖</>}
+            {offers.length > 0 && <> · 🎉 {offers.length}</>}
+          </span>
+        </span>
+        <span style={{ color: "var(--muted-foreground)", fontSize: 12, flexShrink: 0 }}>{open ? "▲" : "▼"}</span>
+      </button>
+      <div style={{ display: "flex", gap: 8, padding: "0 14px 12px" }}>
+        <button type="button" onClick={copyGift} style={quickBtn}>🔗 نسخ الرابط</button>
+        <button type="button" onClick={shareGift} style={quickBtn}>↗ مشاركة الرابط</button>
       </div>
+      {linkMsg && <p style={{ fontSize: 12.5, color: "#22c55e", margin: 0, padding: "0 14px 10px" }}>{linkMsg}</p>}
+      {!open && msg && <p style={{ fontSize: 12.5, color: "#22c55e", margin: 0, padding: "0 14px 10px" }}>{msg}</p>}
+
+      {open && (
+      <div style={{ padding: "0 14px 14px" }}>
       <StatsBox
         kind="gift"
         target={g.serial}
@@ -274,6 +335,8 @@ function GiftRow({
         حفظ
       </button>
       {msg && <p style={{ fontSize: 13, color: "var(--muted-foreground)", margin: "8px 0 0" }}>{msg}</p>}
+      </div>
+      )}
     </div>
   );
 }
