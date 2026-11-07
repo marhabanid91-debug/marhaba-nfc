@@ -230,7 +230,7 @@ export default function BusinessScreen() {
 
         {identity?.id && (
           <div style={{ marginTop: 18 }}>
-            <VaultEditor identityId={identity.id} scope="business" accent="#c9a84c" />
+            <VaultEditor identityId={identity.id} scope="business" accent="#c9a84c" serial={identity.serialNumber} activeMode={identity.activeMode} />
           </div>
         )}
 
