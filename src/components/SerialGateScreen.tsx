@@ -64,6 +64,7 @@ export default function SerialGateScreen() {
         setError(isAr ? "تعذّر ربط البطاقة، قد تكون مفعّلة مسبقاً" : "Could not link the card");
         return;
       }
+      try { sessionStorage.setItem("creating_identity", id); } catch {}
       goHomeFresh();
     } finally {
       setBusy(false);
