@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import {
   loadUserIdentities, createIdentity, updateIdentityMode as dbUpdateMode,
   updateIdentityActive, deleteIdentityFromDB, loadProfile, upsertProfile,
-  activateCard, serialForToken, SerialRecord, loadPublicIdentityBySerial, lookupSerial,
+  activateCard, serialForToken, isTokenCard, SerialRecord, loadPublicIdentityBySerial, lookupSerial,
 } from "../lib/db";
 import { getGiftBySerial, claimGift } from "../lib/gift";
 
@@ -41,6 +41,8 @@ interface AppContextType {
   setIdentities: (ids: Identity[]) => void;
   activeIdentityId: string | null;
   setActiveIdentityId: (id: string | null) => void;
+  creatingId: string | null;
+  setCreatingId: (id: string | null) => void;
   updateIdentityMode: (id: string, mode: ActiveMode) => void;
   addIdentity: (name: string) => void;
   deleteIdentity: (id: string) => void;
@@ -83,6 +85,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [gateSerial, setGateSerial] = useState<string | null>(null);
   const [identities, setIdentities] = useState<Identity[]>([]);
   const [activeIdentityId, setActiveIdentityId] = useState<string | null>(null);
+  // هوية قيد الإنشاء (تُحفظ في sessionStorage لأن إنشاءها يُعيد تحميل الصفحة)
+  const [creatingId, setCreatingIdState] = useState<string | null>(() => {
+    try { return sessionStorage.getItem("creating_identity"); } catch { return null; }
+  });
+  const setCreatingId = (id: string | null) => {
+    setCreatingIdState(id);
+    try { if (id) sessionStorage.setItem("creating_identity", id); else sessionStorage.removeItem("creating_identity"); } catch {}
+  };
   const [readerPreviewMode, setReaderPreviewMode] = useState<ActiveMode>("business");
   const [dbLoading, setDbLoading] = useState(false);
   // Gate that hides the card-scan welcome screen from ever flashing on
@@ -133,6 +143,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // البطاقات الجديدة تُفتح برمز عشوائي (?c=)، والبطاقات ذات الرمز لا تُفتح بالرقم التسلسلي
       const resolveSerial = async (): Promise<string | null> => {
         if (tokenFromUrl) return await serialForToken(tokenFromUrl);
+        if (await isTokenCard(rawSerialFromUrl!)) return null;
         return rawSerialFromUrl;
       };
       resolveSerial().then((serialFromUrl) => {
@@ -321,6 +332,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         user, setUser, setAvatarUrl,
         identities, setIdentities,
         activeIdentityId, setActiveIdentityId,
+        creatingId, setCreatingId,
         updateIdentityMode, addIdentity, deleteIdentity, toggleIdentityActive,
         readerPreviewMode, setReaderPreviewMode,
         darkMode, setDarkMode,
