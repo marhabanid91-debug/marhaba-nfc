@@ -2,6 +2,18 @@ import { supabase } from "./supabase";
 
 export type VaultScope = "emergency" | "business";
 
+/** أيقونة مناسبة لعنوان الرابط (طبي، سيرة، شهادة…) */
+export function docIcon(title: string): string {
+  const t = title.toLowerCase();
+  if (/طب|صح|مرض|تحليل|دواء|علاج|مستشفى|medic|health|lab/.test(t)) return "🏥";
+  if (/شهاد|اكاد|أكاد|دراس|جامع|تخرج|درجات|degree|academ|certif|transcript/.test(t)) return "🎓";
+  if (/سيرة|cv|resume|وظيف|عمل|خبر/.test(t)) return "💼";
+  if (/هوي|جواز|اقامة|إقامة|passport|\bid\b/.test(t)) return "🪪";
+  if (/عقد|قانون|تأمين|وثيق|contract|legal|insur/.test(t)) return "📑";
+  if (/كتالوج|catalog|منتج/.test(t)) return "📖";
+  return "📄";
+}
+
 /** اسم الميزة في الواجهة: غيّره هنا فقط */
 export const VAULT_NAME = { ar: "المستندات المحمية", en: "Protected documents" };
 export const VAULT_HINT = { ar: "روابط تظهر برمز سري", en: "Links shown with a secret code" };
