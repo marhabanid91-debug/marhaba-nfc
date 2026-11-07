@@ -59,7 +59,7 @@ export default function BottomNav() {
       zIndex: 100,
     }}>
       {navItems.map((item) => {
-        const isActive = screen === item.screen;
+        const isActive = screen === item.screen || (item.screen === "home" && screen === "identity-detail");
         const label = lang === "ar" ? item.labelAr : item.labelEn;
         return (
           <button
