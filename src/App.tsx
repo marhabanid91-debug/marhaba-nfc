@@ -15,6 +15,7 @@ import CardScanScreen from "./components/CardScanScreen";
 import SerialGateScreen from "./components/SerialGateScreen";
 import GiftView from "./components/GiftView";
 import IdentityDetailScreen from "./components/IdentityDetailScreen";
+import { useEffect, useRef } from "react";
 import marhabaLogo from "./imports/marhaba-logo.png";
 
 const appScreens = ["home", "identity-detail", "emergency", "business", "events", "accessory", "settings"];
@@ -39,7 +40,25 @@ function LoadingScreen() {
 }
 
 function AppShell() {
-  const { screen, dbLoading, initializing } = useApp();
+  const { screen, setScreen, dbLoading, initializing, identities, creatingId, activeIdentityId, setActiveIdentityId, setCreatingId } = useApp();
+
+  const entered = useRef(false);
+  // بعد إنشاء هوية جديدة (تُعاد تحميل الصفحة): ندخل خطوات الإنشاء مباشرة
+  useEffect(() => {
+    if (initializing || dbLoading || !creatingId) return;
+    if (!identities.length) return;
+    if (!identities.some((i) => i.id === creatingId)) { setCreatingId(null); return; }
+    if (entered.current) return;
+    entered.current = true;
+    setActiveIdentityId(creatingId);
+    setScreen("emergency");
+  }, [initializing, dbLoading, creatingId, identities]);
+
+  // شاشات التعديل تحتاج هوية محددة
+  useEffect(() => {
+    if (initializing || dbLoading) return;
+    if (["emergency", "business", "events", "identity-detail"].includes(screen) && !activeIdentityId && !creatingId) setScreen("home");
+  }, [screen, activeIdentityId, creatingId, initializing, dbLoading]);
   const showNav = appScreens.includes(screen);
 
   if (initializing) {
