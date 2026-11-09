@@ -10,6 +10,28 @@ export default function GiftView() {
   const serial = new URLSearchParams(window.location.search).get("serial") || "";
   const [gift, setGift] = useState<GiftPublic | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [copied, setCopied] = useState<number | null>(null);
+
+  // يفتح قائمة المشاركة في الجوال (واتساب، سناب، تيك توك، إنستغرام…) ويشارك رابط الهدية نفسه
+  const shareNow = async (title: string | undefined, idx: number) => {
+    const link = window.location.href;
+    const text = `${title || gift?.gift_title || "هدية من مرحبا NFC"} 🎁`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: text, text, url: link });
+        return;
+      }
+    } catch {
+      return; // أغلق المستخدم القائمة
+    }
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(idx);
+      setTimeout(() => setCopied(null), 2500);
+    } catch {
+      window.prompt("انسخ الرابط وشاركه", link);
+    }
+  };
 
   useEffect(() => {
     getGiftBySerial(serial).then((g) => {
@@ -78,7 +100,12 @@ export default function GiftView() {
                   allow="autoplay; encrypted-media; fullscreen"
                   allowFullScreen
                   loading="lazy"
-                  style={{ width: "100%", ...(it.embed.tall ? { height: "70vh" } : { aspectRatio: "16 / 9" }), border: 0, borderRadius: 16, background: "#000" }}
+                  style={{
+                    width: "100%", border: 0, borderRadius: 16, background: "#000",
+                    ...(it.embed.portrait
+                      ? { maxWidth: 360, height: 740, display: "block", margin: "0 auto" }
+                      : it.embed.tall ? { height: "70vh" } : { aspectRatio: "16 / 9" }),
+                  }}
                 />
               )}
               {it.embed.kind === "image" && <img src={it.embed.src} alt="" style={{ width: "100%", borderRadius: 16 }} />}
@@ -106,20 +133,20 @@ export default function GiftView() {
                       {o.how}
                     </div>
                   )}
-                  {o.url && (
-                    <a
-                      href={o.url}
-                      onClick={hit(`offer:${i}`)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: "block", marginTop: 12, padding: "11px 16px", borderRadius: 12, textAlign: "center",
-                        background: "var(--primary)", color: "#000", fontWeight: 700, fontSize: 15, textDecoration: "none",
-                      }}
-                    >
-                      شارك الآن ↗
-                    </a>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      hit(`offer:${i}`)();
+                      shareNow(o.title, i);
+                    }}
+                    style={{
+                      display: "block", width: "100%", marginTop: 12, padding: "11px 16px", borderRadius: 12, textAlign: "center",
+                      background: "var(--primary)", color: "#000", fontWeight: 700, fontSize: 15, border: 0, cursor: "pointer",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    {copied === i ? "تم نسخ الرابط ✓" : "شارك الآن ↗"}
+                  </button>
                 </div>
               ))}
             </div>
