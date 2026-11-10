@@ -223,7 +223,7 @@ function SaveCardBtn({ url, name, lang }: { url: string; name?: string; lang: st
           : (ar ? "احفظ البطاقة" : "Save this card")}
       </button>
       <div style={{ fontSize: 11, color: "var(--muted-foreground)", textAlign: "center", marginTop: 6, lineHeight: 1.6 }}>
-        {ar ? "احتفظ بالرابط لتعود إليها وتتابع لاحقاً" : "Keep the link to come back and follow up later"}
+        {ar ? "احفظ الرابط للمتابعة لاحقاً" : "Save the link to follow up later"}
       </div>
     </div>
   );
