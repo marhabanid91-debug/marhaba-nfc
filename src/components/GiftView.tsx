@@ -4,6 +4,12 @@ import marhabaLogo from "../imports/marhaba-logo.png";
 import { trackOpen, trackClick } from "../lib/stats";
 
 const LANDING_LINK = "https://welcome.marhabanid.com";
+const WA_NUMBER = "966500816798";
+
+// رابط واتساب جاهز: يفتح محادثة مع مرحبا برسالة تتضمن اسم السحب ورابط الهدية
+const waLink = (title?: string) =>
+  `https://wa.me/${WA_NUMBER}?text=` +
+  encodeURIComponent(`مرحباً مرحبا NFC 👋\nأرغب بالمشاركة في ${title || "السحب الأسبوعي"} 🎁\nرابط الهدية: ${window.location.href}`);
 
 // صفحة الهدية التي يراها من يمسح بطاقة الهدية
 export default function GiftView() {
@@ -147,6 +153,19 @@ export default function GiftView() {
                   >
                     {copied === i ? "تم نسخ الرابط ✓" : "شارك الآن ↗"}
                   </button>
+                  <a
+                    href={waLink(o.title)}
+                    onClick={hit(`offer-wa:${i}`)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "block", width: "100%", boxSizing: "border-box", marginTop: 10, padding: "11px 16px", borderRadius: 12,
+                      textAlign: "center", background: "#25D366", color: "#fff", fontWeight: 700, fontSize: 15,
+                      textDecoration: "none", fontFamily: "inherit",
+                    }}
+                  >
+                    💬 تواصل فوري عبر واتساب
+                  </a>
                 </div>
               ))}
             </div>
