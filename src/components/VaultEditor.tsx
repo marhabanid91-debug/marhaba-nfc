@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useApp } from "../context/AppContext";
+import { supabase } from "../lib/supabase";
 import { loadMyVault, saveMyVault, MyVault, VaultEditItem, VaultScope, VAULT_NAME, VAULT_HINT, docIcon } from "../lib/vault";
 import { myCardToken } from "../lib/db";
 import { shareLink } from "../lib/share";
 import { ActiveMode } from "../types";
 
 const MAX_ITEMS = 10;
+const WA_NUMBER = "966500816798";
 
 type Item = VaultEditItem & { k: string };
 
@@ -47,6 +49,15 @@ export default function VaultEditor({
   const [busy, setBusy] = useState(false);
   const [show, setShow] = useState(false);
   const [shareMsg, setShareMsg] = useState("");
+  const [access, setAccess] = useState<boolean | null>(null);
+
+  // هل يحق لهذا الحساب استخدام المستندات المحمية؟ (مدير أو مشترك ساري، تحدده قاعدة البيانات)
+  useEffect(() => {
+    if (!supabaseUser) return;
+    let alive = true;
+    supabase.rpc("can_use_vault").then(({ data }) => { if (alive) setAccess(data === true); });
+    return () => { alive = false; };
+  }, [supabaseUser?.id]);
 
   const load = () =>
     loadMyVault(identityId, scope).then((v) => {
@@ -63,7 +74,36 @@ export default function VaultEditor({
   }, [identityId, scope, supabaseUser?.id]);
 
   // قبل تشغيل SQL أو بدون حساب: لا يظهر شيء
-  if (!supabaseUser || !loaded || !info) return null;
+  if (!supabaseUser || access === null) return null;
+
+  // غير مشترك: بطاقة طلب التفعيل
+  if (access === false) {
+    const email = (supabaseUser as any)?.email;
+    const wa = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(
+      `أرغب بتفعيل خاصية المستندات المحمية لحسابي${email ? ` (${email})` : ""}`
+    )}`;
+    return (
+      <div dir={ar ? "rtl" : "ltr"} style={{
+        border: `1px solid ${accent}40`, background: `${accent}0d`, borderRadius: 14, padding: 14, textAlign: "center",
+      }}>
+        <div style={{ fontSize: 26 }}>🔐</div>
+        <div style={{ fontWeight: 800, fontSize: 15, margin: "4px 0" }}>
+          {ar ? `${VAULT_NAME.ar} — خاصية مدفوعة` : `${VAULT_NAME.en} — paid feature`}
+        </div>
+        <div style={{ fontSize: 12.5, color: "var(--muted-foreground)", lineHeight: 1.8 }}>
+          {ar ? "اطلب التفعيل وسنفعّلها لحسابك بعد التواصل." : "Request activation and we will enable it for your account."}
+        </div>
+        <a href={wa} target="_blank" rel="noopener noreferrer" style={{
+          display: "block", marginTop: 10, padding: "11px 16px", borderRadius: 12, background: accent,
+          color: "#000", fontWeight: 700, fontSize: 14, textDecoration: "none",
+        }}>
+          {ar ? "💬 اطلب التفعيل عبر واتساب" : "💬 Request activation on WhatsApp"}
+        </a>
+      </div>
+    );
+  }
+
+  if (!loaded || !info) return null;
 
   const setItem = (i: number, patch: Partial<VaultEditItem>) =>
     setItems((prev) => prev.map((it, k) => (k === i ? { ...it, ...patch } : it)));
