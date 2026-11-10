@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import VaultReader from "./VaultReader";
 import { createPortal } from "react-dom";
 import { useApp } from "../context/AppContext";
 import { ActiveMode } from "../types";
@@ -35,6 +34,7 @@ function downloadVCard(fields: {
   company?: string;
   jobTitle?: string;
   note?: string;
+  cardUrl?: string;
 }) {
   const fn = fields.name || "";
   const lines = [
@@ -45,6 +45,7 @@ function downloadVCard(fields: {
     fields.phone ? `TEL;TYPE=CELL:${fields.phone}` : "",
     fields.email ? `EMAIL:${fields.email}` : "",
     fields.website ? `URL:${fields.website}` : "",
+    fields.cardUrl ? `URL;TYPE=Marhaba:${fields.cardUrl}` : "",
     fields.company ? `ORG:${fields.company}` : "",
     fields.jobTitle ? `TITLE:${fields.jobTitle}` : "",
     fields.note ? `NOTE:${fields.note}` : "",
@@ -166,6 +167,64 @@ function ContactMeBtn({ ownerPhone, ownerName, lang }: { ownerPhone: string; own
             : "You can share your social links with your own card. Tap here"}
         </a>
       )}
+    </div>
+  );
+}
+
+// رابط البطاقة الذي يفتحه القارئ (عند المسح يكون في عنوان الصفحة)
+function currentCardUrl(identity?: any): string {
+  try {
+    const u = new URL(window.location.href);
+    if (u.searchParams.get("c") || u.searchParams.get("serial")) return u.origin + "/" + u.search;
+    if (identity?.serialNumber) return `${u.origin}/?serial=${encodeURIComponent(identity.serialNumber)}`;
+  } catch { /* تجاهل */ }
+  return "https://marhabanid.com";
+}
+
+// زر «احفظ بطاقتي»: يفتح قائمة المشاركة ليحفظ القارئ الرابط (ملاحظاته، واتساب لنفسه، المفضلة…)، وإلا ينسخ الرابط
+function SaveCardBtn({ url, name, lang }: { url: string; name?: string; lang: string }) {
+  const [done, setDone] = useState<"" | "shared" | "copied">("");
+  const ar = lang === "ar";
+  const act = async () => {
+    const title = name ? (ar ? `بطاقة ${name}` : `${name}'s card`) : (ar ? "بطاقة مرحبا" : "Marhaba card");
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text: title, url });
+        setDone("shared");
+        setTimeout(() => setDone(""), 2500);
+        return;
+      }
+    } catch {
+      return; // أغلق القارئ القائمة
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setDone("copied");
+      setTimeout(() => setDone(""), 2500);
+    } catch {
+      window.prompt(ar ? "انسخ الرابط واحفظه" : "Copy and keep this link", url);
+    }
+  };
+  return (
+    <div style={{ marginTop: 12 }}>
+      <button
+        onClick={act}
+        data-stat="savecard"
+        style={{
+          width: "100%", padding: "13px", borderRadius: 12,
+          background: done ? "rgba(201,168,76,0.18)" : "rgba(201,168,76,0.10)",
+          border: "1px solid rgba(201,168,76,0.45)", color: "#c9a84c",
+          fontWeight: 800, fontSize: 14, cursor: "pointer", fontFamily: "inherit",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+        }}
+      >
+        {done === "copied" ? "✓" : "🔖"} {done === "copied"
+          ? (ar ? "تم نسخ رابط البطاقة" : "Card link copied")
+          : (ar ? "احفظ البطاقة" : "Save this card")}
+      </button>
+      <div style={{ fontSize: 11, color: "var(--muted-foreground)", textAlign: "center", marginTop: 6, lineHeight: 1.6 }}>
+        {ar ? "احتفظ بالرابط لتعود إليها وتتابع لاحقاً" : "Keep the link to come back and follow up later"}
+      </div>
     </div>
   );
 }
@@ -499,8 +558,6 @@ function EmergencyReader({ identity, color }: { identity: any; color: string }) 
         <div style={{ textAlign: "center", padding: "24px", color: "var(--muted-foreground)" }}>{noData}</div>
       )}
 
-      <VaultReader identityId={identity?.id} scope="emergency" color={color} />
-
       <LocationCard locations={d?.locations} />
 
       <NotifyFamily contacts={visibleContacts} name={d?.name ? truncateName(d.name) : undefined} lang={lang} />
@@ -592,8 +649,6 @@ function BusinessReader({ identity, color }: { identity: any; color: string }) {
         </div>
       )}
 
-      <VaultReader identityId={identity?.id} scope="business" color={color} />
-
       <LocationCard locations={d?.locations} />
 
       {/* تواصل معي */}
@@ -610,9 +665,13 @@ function BusinessReader({ identity, color }: { identity: any; color: string }) {
             website: d.website,
             company: d.company,
             jobTitle: d.jobTitle,
+            cardUrl: currentCardUrl(identity),
           })}
         />
       )}
+
+      {/* احفظ البطاقة */}
+      {d?.name && <SaveCardBtn url={currentCardUrl(identity)} name={truncateName(d.name)} lang={lang} />}
     </div>
   );
 }
@@ -719,9 +778,13 @@ function EventsReader({ identity, color }: { identity: any; color: string }) {
             name: d.name,
             phone: identity?.business?.phone,
             note: [d.eventName, d.eventLocation, d.status].filter(Boolean).join(" — "),
+            cardUrl: currentCardUrl(identity),
           })}
         />
       )}
+
+      {/* احفظ البطاقة */}
+      {d?.name && <SaveCardBtn url={currentCardUrl(identity)} name={truncateName(d.name)} lang={lang} />}
     </div>
   );
 }
