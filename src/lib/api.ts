@@ -21,7 +21,7 @@ export interface AppSettings {
 const DEFAULTS: AppSettings = {
   whatsapp_number: "966500816798",
   whatsapp_accessory_number: "966500816798",
-  support_email: "support@marhaba.com",
+  support_email: "info@marhabanid.com",
   store_links: [],
 };
 
