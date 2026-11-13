@@ -230,7 +230,7 @@ export default function AccessoryScreen() {
               <div className="card" style={{ marginTop: 16, textAlign: "center" }}>
                 <div style={{ fontSize: 28 }}>🎁</div>
                 <div style={{ fontWeight: 700, margin: "6px 0" }}>
-                  {lang === "ar" ? "الهدايا التفاعلية — خاصية مدفوعة" : "Interactive gifts — paid feature"}
+                  {lang === "ar" ? "أعمال وهدايا — خاصية مدفوعة" : "Works & gifts — paid feature"}
                 </div>
                 <div style={{ fontSize: 13, opacity: 0.75, lineHeight: 1.8 }}>
                   {lang === "ar" ? "اطلب التفعيل وسنفعّلها لحسابك بعد التواصل." : "Request activation and we will enable it for your account."}
@@ -239,7 +239,7 @@ export default function AccessoryScreen() {
                   className="btn-primary"
                   style={{ display: "block", marginTop: 12, textDecoration: "none" }}
                   href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(
-                    `أرغب بتفعيل خاصية الهدايا لحسابي${(supabaseUser as any)?.email ? ` (${(supabaseUser as any).email})` : ""}`
+                    `أرغب بتفعيل خاصية أعمال وهدايا لحسابي${(supabaseUser as any)?.email ? ` (${(supabaseUser as any).email})` : ""}`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
