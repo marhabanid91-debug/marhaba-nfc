@@ -3,7 +3,7 @@ import StatsBox from "./StatsBox";
 import { copyText, shareLink } from "../lib/share";
 import { claimGift, loadMyGifts, setGiftLink, setGiftPromo, toEmbed, isTikTokUnsupported, giftItems, cleanPromo, GiftItem, GiftOffer, MyGift } from "../lib/gift";
 
-// قسم «هداياي» داخل حساب المُهدي: تفعيل بطاقة هدية وتبديل رابطها
+// قسم «أعمال وهدايا» داخل حساب المُهدي: تفعيل بطاقة هدية وتبديل رابطها
 export default function MyGifts() {
   const [list, setList] = useState<MyGift[]>([]);
   const [code, setCode] = useState("");
@@ -34,7 +34,7 @@ export default function MyGifts() {
 
   return (
     <section dir="rtl" style={{ marginTop: 28 }}>
-      <h3 style={{ margin: "0 0 12px", fontSize: 16 }}>🎁 هداياي</h3>
+      <h3 style={{ margin: "0 0 12px", fontSize: 16 }}>🎁 أعمال وهدايا</h3>
 
       {list.length > 0 && !showAdd && (
         <button
