@@ -15,6 +15,7 @@ import CardScanScreen from "./components/CardScanScreen";
 import SerialGateScreen from "./components/SerialGateScreen";
 import GiftView from "./components/GiftView";
 import IdentityDetailScreen from "./components/IdentityDetailScreen";
+import InstallPrompt from "./components/InstallPrompt";
 import { useEffect, useRef } from "react";
 import marhabaLogo from "./imports/marhaba-logo.png";
 
@@ -89,6 +90,7 @@ function AppShell() {
       {screen === "serial-gate" && <SerialGateScreen />}
       {screen === "card-scan" && <CardScanScreen />}
       {showNav && <BottomNav />}
+      <InstallPrompt />
     </div>
   );
 }
