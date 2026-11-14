@@ -15,7 +15,7 @@ export default function OfflineSettingsScreen() {
   const { lang, identities, setIdentities, activeIdentityId, setScreen, supabaseUser } = useApp();
   const identity = identities.find((i) => i.id === activeIdentityId) || identities[0];
   const [settings, setSettings] = useState<OfflineSettings>(
-    identity?.offlineSettings || { name: true, contactPhone: false, emergencyPhone: true }
+    identity?.offlineSettings || { name: true, contactPhone: true, emergencyPhone: true }
   );
   const [showUpdate, setShowUpdate] = useState(false);
   const [updated, setUpdated] = useState(false);
