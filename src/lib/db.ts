@@ -142,7 +142,7 @@ const defaultEvents = (): EventsData => ({
 });
 
 const defaultOffline = (): OfflineSettings => ({
-  name: true, contactPhone: false, emergencyPhone: true,
+  name: true, contactPhone: true, emergencyPhone: true,
 });
 
 // ─── Identity loading ────────────────────────────────────────────────────────
