@@ -24,7 +24,7 @@ const makeDefaultIdentity = (name = ""): Omit<Identity, "id" | "serialNumber"> =
   },
   business: { photo: "", name, jobTitle: "", company: "", bio: "", phone: "", email: "", website: "", location: "", socialLinks: {} },
   events: { photo: "", name, bio: "", eventName: "", eventLocation: "", status: "" as const, ticketLink: "", socialLinks: {} },
-  offlineSettings: { name: true, contactPhone: false, emergencyPhone: true },
+  offlineSettings: { name: true, contactPhone: true, emergencyPhone: true },
 });
 
 interface AppContextType {
