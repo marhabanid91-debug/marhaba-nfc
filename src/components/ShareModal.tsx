@@ -18,7 +18,7 @@ const vEsc = (v: string) => v.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").repla
 /** بطاقة اتصال (vCard) تُقرأ بكاميرا الجوال دون إنترنت، بحسب إعدادات «بيانات القراءة دون إنترنت» */
 function buildOfflineVCard(identity: Identity | undefined, name: string, pageUrl: string): string | null {
   if (!identity) return null;
-  const o = identity.offlineSettings || { name: true, contactPhone: false, emergencyPhone: true };
+  const o = identity.offlineSettings || { name: true, contactPhone: true, emergencyPhone: true };
   const contact = o.contactPhone ? (identity.business.phone || "").trim() : "";
   const emergency = o.emergencyPhone
     ? (identity.emergency.emergencyContacts || []).find((c) => c.visible && c.phone)
