@@ -73,6 +73,7 @@ function mapBusinessFromDB(row: any): BusinessData {
     location: row.location || "",
     socialLinks: row.social_links || {},
     locations: (row.locations as LocationItem[]) || [],
+    contactMessage: row.contact_message || "",
   };
 }
 
@@ -89,6 +90,7 @@ function mapBusinessToDB(data: BusinessData) {
     location: data.location || null,
     social_links: data.socialLinks || {},
     locations: data.locations || [],
+    contact_message: (data.contactMessage || "").trim() || null,
     updated_at: new Date().toISOString(),
   };
 }
