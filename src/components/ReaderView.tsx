@@ -90,7 +90,7 @@ function waNumber(raw: string): string {
 // زر «تواصل معي»: يفتح واتساب برسالة جاهزة لصاحب البطاقة
 // - قارئ مسجّل في مرحبا: اسمه ورابط بطاقته تُرسل فوراً
 // - قارئ غير مسجّل: رسالة مناسبة، وبعد الإرسال تظهر دعوة لإنشاء بطاقته
-function ContactMeBtn({ ownerPhone, ownerName, lang }: { ownerPhone: string; ownerName?: string; lang: string }) {
+function ContactMeBtn({ ownerPhone, ownerName, lang, customMessage }: { ownerPhone: string; ownerName?: string; lang: string; customMessage?: string }) {
   const [me, setMe] = useState<{ name: string; link: string } | null>(null);
   const [sent, setSent] = useState(false);
 
@@ -127,7 +127,10 @@ function ContactMeBtn({ ownerPhone, ownerName, lang }: { ownerPhone: string; own
     const greet = ar
       ? `السلام عليكم${ownerName ? " " + ownerName : ""}،`
       : `Hello${ownerName ? " " + ownerName : ""},`;
-    const text = me
+    const custom = (customMessage || "").trim();
+    const text = custom
+      ? custom + (me ? (ar ? `\n\nبطاقتي: ${me.link}` : `\n\nMy card: ${me.link}`) : "")
+      : me
       ? (ar
           ? `${greet}\nأنا ${me.name || ""}، تعرفت عليك عبر بطاقتك الذكية من مرحبا ويسعدني التواصل معك.\nبطاقتي: ${me.link}`
           : `${greet}\nI'm ${me.name || ""}. I met you through your Marhaba smart card and would love to connect.\nMy card: ${me.link}`)
@@ -652,7 +655,7 @@ function BusinessReader({ identity, color }: { identity: any; color: string }) {
       <LocationCard locations={d?.locations} />
 
       {/* تواصل معي */}
-      {d?.phone && <ContactMeBtn ownerPhone={d.phone} ownerName={d?.name ? truncateName(d.name) : undefined} lang={lang} />}
+      {d?.phone && <ContactMeBtn ownerPhone={d.phone} ownerName={d?.name ? truncateName(d.name) : undefined} lang={lang} customMessage={d?.contactMessage} />}
 
       {/* Save Contact */}
       {d?.name && (
@@ -768,7 +771,7 @@ function EventsReader({ identity, color }: { identity: any; color: string }) {
       <LocationCard locations={d?.locations} />
 
       {/* تواصل معي: يستخدم رقم بطاقة الأعمال لنفس الهوية */}
-      {identity?.business?.phone && <ContactMeBtn ownerPhone={identity.business.phone} ownerName={d?.name ? truncateName(d.name) : undefined} lang={lang} />}
+      {identity?.business?.phone && <ContactMeBtn ownerPhone={identity.business.phone} ownerName={d?.name ? truncateName(d.name) : undefined} lang={lang} customMessage={identity.business.contactMessage} />}
 
       {/* Save Contact */}
       {d?.name && (
