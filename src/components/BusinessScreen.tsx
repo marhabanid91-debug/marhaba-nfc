@@ -47,6 +47,7 @@ export default function BusinessScreen() {
     jobTitle: data?.jobTitle || "",
     company: data?.company || "",
     bio: data?.bio || "",
+    contactMessage: data?.contactMessage || "",
     phone: data?.phone || "",
     email: data?.email || "",
     website: data?.website || "",
@@ -181,6 +182,7 @@ export default function BusinessScreen() {
           <F label={t("jobTitle")} value={form.jobTitle} onChange={(v) => setForm({ ...form, jobTitle: v })} placeholder={t("enterJobTitle")} />
           <F label={t("company")} value={form.company} onChange={(v) => setForm({ ...form, company: v })} placeholder={t("enterCompany")} />
           <F label={t("bio")} value={form.bio} onChange={(v) => setForm({ ...form, bio: v })} placeholder={t("enterBio")} multiline optional />
+          <F label="رسالة الترحيب عند التواصل معك (واتساب)" value={form.contactMessage} onChange={(v) => setForm({ ...form, contactMessage: v })} placeholder="مثال: السلام عليكم، حبيت أتواصل معك بخصوص خدماتكم" multiline optional />
           <div>
   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
     <label style={{ fontSize: 13, color: "var(--muted-foreground)" }}>{t("phone")}</label>
