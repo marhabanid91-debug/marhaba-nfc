@@ -9,6 +9,8 @@ const isStandalone = () => {
     return window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone === true;
   } catch { return false; }
 };
+// متصفح سامسونج: تثبيته التلقائي قد يصنع تطبيقاً قديماً يحجبه Google Play Protect، فنكتفي بإرشاد «إضافة إلى الشاشة الرئيسية»
+const isSamsung = () => /SamsungBrowser/i.test(navigator.userAgent);
 const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window as any).MSStream;
 
 const recentlyDismissed = () => {
@@ -23,7 +25,7 @@ export default function InstallPrompt() {
   const { screen, lang } = useApp();
   const isAr = lang === "ar";
   const evt = useRef<any>(null);
-  const [mode, setMode] = useState<"" | "android" | "ios">("");
+  const [mode, setMode] = useState<"" | "android" | "ios" | "samsung">("");
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -31,6 +33,7 @@ export default function InstallPrompt() {
     let timer: any;
     const onPrompt = (e: any) => {
       e.preventDefault();
+      if (isSamsung()) return; // لا نستخدم التثبيت التلقائي في متصفح سامسونج
       evt.current = e;
       setMode("android");
       timer = setTimeout(() => setOpen(true), 2500);
@@ -40,6 +43,9 @@ export default function InstallPrompt() {
     window.addEventListener("appinstalled", onInstalled);
     if (isIOS()) {
       setMode("ios");
+      timer = setTimeout(() => setOpen(true), 2500);
+    } else if (isSamsung()) {
+      setMode("samsung");
       timer = setTimeout(() => setOpen(true), 2500);
     }
     return () => {
@@ -85,7 +91,9 @@ export default function InstallPrompt() {
         <div style={{ fontSize: 12, color: "#ddd", lineHeight: 1.6 }}>
           {mode === "ios"
             ? (isAr ? "اضغط زر المشاركة ثم «إضافة إلى الشاشة الرئيسية»" : "Tap Share, then “Add to Home Screen”")
-            : (isAr ? "وصول أسرع بدون متصفح" : "Faster access, like an app")}
+            : mode === "samsung"
+              ? (isAr ? "من القائمة ☰ اختر «إضافة الصفحة إلى» ثم «الشاشة الرئيسية»" : "Menu ☰ → Add page to → Home screen")
+              : (isAr ? "وصول أسرع بدون متصفح" : "Faster access, like an app")}
         </div>
       </div>
       {mode === "android" && (
