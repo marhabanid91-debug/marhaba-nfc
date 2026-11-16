@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 import { Language, Screen, Identity, User, ActiveMode } from "../types";
 import { translations, TKey } from "../i18n";
 import { supabase } from "../lib/supabase";
@@ -107,10 +107,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return saved ? saved === "dark" : true;
   });
 
+  // ===== زر الرجوع: يعيد للصفحة السابقة داخل التطبيق بدل الخروج من الموقع =====
+  const screenRef = useRef<Screen>(screen);
+  screenRef.current = screen;
+  const userRef = useRef<any>(null);
+  userRef.current = supabaseUser;
+  const pushedRef = useRef(false);
+  const fromPopRef = useRef(false);
+
   const setScreen = (s: Screen) => {
+    if (s === screen) return;
     setPrevScreen(screen);
+    pushedRef.current = true;
+    try { window.history.pushState({ app: true, screen: s }, ""); } catch {}
     setScreenState(s);
   };
+
+  // أي تغيير آخر للصفحة (تحميل أولي، توجيه بعد الدخول…) يستبدل المدخل الحالي ولا يضيف مدخلاً جديداً
+  useEffect(() => {
+    if (pushedRef.current) { pushedRef.current = false; return; }
+    if (fromPopRef.current) { fromPopRef.current = false; return; }
+    try { window.history.replaceState({ app: true, screen }, ""); } catch {}
+  }, [screen]);
+
+  useEffect(() => {
+    const onPop = (e: PopStateEvent) => {
+      const st = e.state as { app?: boolean; screen?: Screen } | null;
+      if (!st || !st.app || !st.screen) return;
+      let target: Screen = st.screen;
+      // بعد تسجيل الدخول لا نعود لشاشات الدخول أو المسح، بل للرئيسية
+      if (userRef.current && (target === "auth" || target === "card-scan" || target === "serial-gate")) target = "home";
+      if (target === screenRef.current) return;
+      fromPopRef.current = true;
+      setScreenState(target);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   const setDarkMode = (v: boolean) => {
     setDarkModeState(v);
