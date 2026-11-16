@@ -11,6 +11,13 @@ const isStandalone = () => {
 };
 // متصفح سامسونج: تثبيته التلقائي قد يصنع تطبيقاً قديماً يحجبه Google Play Protect، فنكتفي بإرشاد «إضافة إلى الشاشة الرئيسية»
 const isSamsung = () => /SamsungBrowser/i.test(navigator.userAgent);
+// يفتح الصفحة الحالية في كروم من متصفح سامسونج (إن لم يوجد كروم يعود للرابط نفسه)
+const openInChrome = () => {
+  const l = window.location;
+  const url = l.host + l.pathname + l.search + l.hash;
+  const fallback = encodeURIComponent(l.href);
+  window.location.href = `intent://${url}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${fallback};end`;
+};
 const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) && !(window as any).MSStream;
 
 const recentlyDismissed = () => {
@@ -92,10 +99,15 @@ export default function InstallPrompt() {
           {mode === "ios"
             ? (isAr ? "اضغط زر المشاركة ثم «إضافة إلى الشاشة الرئيسية»" : "Tap Share, then “Add to Home Screen”")
             : mode === "samsung"
-              ? (isAr ? "من القائمة ☰ اختر «إضافة الصفحة إلى» ثم «الشاشة الرئيسية»" : "Menu ☰ → Add page to → Home screen")
+              ? (isAr ? "افتحه في Chrome للتثبيت بضغطة واحدة" : "Open in Chrome to install in one tap")
               : (isAr ? "وصول أسرع بدون متصفح" : "Faster access, like an app")}
         </div>
       </div>
+      {mode === "samsung" && (
+        <button onClick={openInChrome} style={{ background: "#c9a84c", color: "#0a0a10", border: "none", borderRadius: 10, padding: "8px 12px", fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+          {isAr ? "فتح في Chrome" : "Open in Chrome"}
+        </button>
+      )}
       {mode === "android" && (
         <button onClick={install} style={{ background: "#c9a84c", color: "#0a0a10", border: "none", borderRadius: 10, padding: "8px 14px", fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
           {isAr ? "تثبيت" : "Install"}
