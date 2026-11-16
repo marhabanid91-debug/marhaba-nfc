@@ -38,6 +38,7 @@ export interface EmergencyVisibility {
 
 export interface SocialLinks {
   googleReview?: string;
+  catalog?: string;
   instagram?: string;
   tiktok?: string;
   facebook?: string;
@@ -88,6 +89,7 @@ export interface BusinessData {
   location: string;
   socialLinks: SocialLinks;
   locations?: LocationItem[];
+  contactMessage?: string;
 }
 
 export type EventStatus = "sponsor" | "participant" | "visitor" | "";
