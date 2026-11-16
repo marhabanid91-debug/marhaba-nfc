@@ -614,6 +614,23 @@ function BusinessReader({ identity, color }: { identity: any; color: string }) {
         <div style={{ textAlign: "center", padding: 24, color: "var(--muted-foreground)" }}>{noData}</div>
       )}
 
+      {typeof (d?.socialLinks as any)?.catalog === "string" && /^https:\/\//i.test((d?.socialLinks as any).catalog) && (
+        <a
+          href={(d?.socialLinks as any).catalog}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            marginTop: 12, padding: "14px", borderRadius: 12,
+            background: `${color}18`, color, border: `1.5px solid ${color}55`,
+            fontWeight: 800, fontSize: 15, textDecoration: "none",
+          }}
+        >
+          <span style={{ fontSize: 18 }}>📖</span>
+          {lang === "ar" ? "تصفّح الكتالوج" : "Browse catalog"}
+        </a>
+      )}
+
       {typeof (d?.socialLinks as any)?.googleReview === "string" && /^https:\/\//i.test((d?.socialLinks as any).googleReview) && (
         <a
           href={(d?.socialLinks as any).googleReview}
@@ -631,13 +648,13 @@ function BusinessReader({ identity, color }: { identity: any; color: string }) {
         </a>
       )}
 
-      {d?.socialLinks && Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview").length > 0 && (
+      {d?.socialLinks && Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview" && k !== "catalog").length > 0 && (
         <div className="card" style={{ marginTop: 12 }}>
           <div style={{ fontSize: 13, color: "var(--muted-foreground)", marginBottom: 12 }}>
             {lang === "ar" ? "وسائل التواصل الاجتماعي" : "Social Media"}
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview").map(([k, v]) => (
+            {Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview" && k !== "catalog").map(([k, v]) => (
               <a key={k} href={String(v)} target="_blank" rel="noopener noreferrer" style={{
                 display: "inline-flex", alignItems: "center", gap: 8,
                 padding: "6px 14px 6px 8px", borderRadius: 20, fontSize: 12,
@@ -733,6 +750,23 @@ function EventsReader({ identity, color }: { identity: any; color: string }) {
         <div style={{ textAlign: "center", padding: 24, color: "var(--muted-foreground)" }}>{noData}</div>
       )}
 
+      {typeof (d?.socialLinks as any)?.catalog === "string" && /^https:\/\//i.test((d?.socialLinks as any).catalog) && (
+        <a
+          href={(d?.socialLinks as any).catalog}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            marginTop: 12, padding: "14px", borderRadius: 12,
+            background: `${color}18`, color, border: `1.5px solid ${color}55`,
+            fontWeight: 800, fontSize: 15, textDecoration: "none",
+          }}
+        >
+          <span style={{ fontSize: 18 }}>📖</span>
+          {lang === "ar" ? "تصفّح الكتالوج" : "Browse catalog"}
+        </a>
+      )}
+
       {typeof (d?.socialLinks as any)?.googleReview === "string" && /^https:\/\//i.test((d?.socialLinks as any).googleReview) && (
         <a
           href={(d?.socialLinks as any).googleReview}
@@ -750,10 +784,10 @@ function EventsReader({ identity, color }: { identity: any; color: string }) {
         </a>
       )}
 
-      {d?.socialLinks && Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview").length > 0 && (
+      {d?.socialLinks && Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview" && k !== "catalog").length > 0 && (
         <div className="card" style={{ marginTop: 12 }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview").map(([k, v]) => (
+            {Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview" && k !== "catalog").map(([k, v]) => (
               <a key={k} href={String(v)} target="_blank" rel="noopener noreferrer" style={{
                 display: "inline-flex", alignItems: "center", gap: 8,
                 padding: "6px 14px 6px 8px", borderRadius: 20, fontSize: 12,
