@@ -12,6 +12,7 @@ import { saveBusinessData, uploadIdentityPhoto } from "../lib/db";
 // Platform config: prefix used to construct full URL from a handle/path
 const socialPlatforms: { key: keyof SocialLinks; label: string; icon: string; prefix: string; placeholder: string }[] = [
   { key: "googleReview", label: "تقييم قوقل", icon: "⭐", prefix: "https://", placeholder: "رابط تقييم قوقل: https://g.page/r/…/review" },
+  { key: "catalog", label: "الكتالوج", icon: "📖", prefix: "https://", placeholder: "رابط الكتالوج: https://…" },
   { key: "instagram", label: "Instagram", icon: "📸", prefix: "https://instagram.com/", placeholder: "https://instagram.com/username" },
   { key: "tiktok",    label: "TikTok",    icon: "🎵", prefix: "https://tiktok.com/@", placeholder: "https://tiktok.com/@username" },
   { key: "linkedin",  label: "LinkedIn",  icon: "💼", prefix: "https://linkedin.com/in/", placeholder: "https://linkedin.com/in/username" },
@@ -214,7 +215,7 @@ export default function BusinessScreen() {
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {socialPlatforms.map((p) => (
                 <div key={p.key} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ width: 28, textAlign: "center", fontSize: 18, flexShrink: 0, display: "inline-flex", justifyContent: "center" }}>{p.key === "googleReview" ? p.icon : <SocialIcon k={p.key} size={26} />}</span>
+                  <span style={{ width: 28, textAlign: "center", fontSize: 18, flexShrink: 0, display: "inline-flex", justifyContent: "center" }}>{p.key === "googleReview" || p.key === "catalog" ? p.icon : <SocialIcon k={p.key} size={26} />}</span>
                   <input
                     type="url"
                     inputMode="url"
