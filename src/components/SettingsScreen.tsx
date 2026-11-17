@@ -1,12 +1,14 @@
 import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext";
 import { useAppSettings } from "../hooks/useAppSettings";
+import { useCompany } from "../hooks/useCompany";
 import { initSchema, getSchemaStatus } from "../lib/api";
 import { uploadAvatar } from "../lib/db";
 
 export default function SettingsScreen() {
   const { t, lang, setLang, setScreen, setUser, setAvatarUrl, user, supabaseUser, isAdmin, identities, activeIdentityId, setActiveIdentityId, darkMode, setDarkMode, deleteIdentity: ctxDelete, toggleIdentityActive: ctxToggle } = useApp();
   const { settings, saving, save, whatsappLink } = useAppSettings();
+  const { org } = useCompany();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState("");
@@ -321,6 +323,16 @@ export default function SettingsScreen() {
             );
           })}
         </div>
+
+        {/* الشركة: تظهر فقط لمن فُعِّلت له الخاصية */}
+        {org && (
+          <>
+            <SectionHeader label={lang === "ar" ? "مرحباً للشركات" : "Marhaba for Business"} />
+            <div className="card" style={{ marginBottom: 16 }}>
+              <Row icon="🏢" label={org.name} arrow onPress={() => setScreen("company")} />
+            </div>
+          </>
+        )}
 
         {/* Accessory */}
         <SectionHeader label={lang === "ar" ? "إدارة الإكسسوار" : "Manage Accessory"} />
