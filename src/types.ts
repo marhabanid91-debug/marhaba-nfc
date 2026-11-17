@@ -40,6 +40,11 @@ export interface EmergencyVisibility {
 export interface SocialLinks {
   googleReview?: string;
   catalog?: string;
+  marhaba?: string;
+  works?: string;
+  giftSerial?: string;
+  eventDate?: string;
+  sponsorName?: string;
   instagram?: string;
   tiktok?: string;
   facebook?: string;
