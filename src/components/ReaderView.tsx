@@ -9,7 +9,7 @@ import { noteLines } from "../lib/contactNotes";
 import { SocialIcon, socialName } from "./SocialIcon";
 import { supabase } from "../lib/supabase";
 import GiftContent from "./GiftContent";
-import { getGiftBySerial, GiftPublic } from "../lib/gift";
+import { GiftPublic } from "../lib/gift";
 import { loadUserIdentities, myCardToken } from "../lib/db";
 import { trackOpen, trackClick, metricForHref } from "../lib/stats";
 
@@ -826,16 +826,12 @@ const EVENT_LINKS: { key: string; icon: string; ar: string; en: string }[] = [
 
 function EventLinks({ d, color, lang, cardUrl }: { d: any; color: string; lang: string; cardUrl: string }) {
   const sl = (d?.socialLinks || {}) as Record<string, string>;
-  const serial = typeof sl.giftSerial === "string" ? sl.giftSerial : "";
-  const [gift, setGift] = useState<GiftPublic | null>(null);
   const [copied, setCopied] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    if (serial) getGiftBySerial(serial).then((g) => { if (alive) setGift(g); });
-    else setGift(null);
-    return () => { alive = false; };
-  }, [serial]);
-  const hasContent = gift && (gift.gift_title || gift.gift_items?.length || gift.gift_catalog || gift.gift_promo);
+  const offers = ((d?.socialLinks as any)?.promo?.offers || []) as { title: string; how?: string }[];
+  const gift: GiftPublic | null = offers.length
+    ? { serial: "", status: "linked", gift_title: null, gift_url: null, gift_catalog: null, gift_items: null, gift_promo: { offers } }
+    : null;
+  const hasContent = !!gift;
   const ar = lang === "ar";
   const title = d?.eventName || d?.name || "";
 
@@ -871,8 +867,7 @@ function EventLinks({ d, color, lang, cardUrl }: { d: any; color: string; lang: 
       {/* السحوبات والعروض أولاً: أقوى ما يجذب الزائر */}
       {hasContent && gift && (
         <div className="card" style={{ marginTop: 12, textAlign: "center" }}>
-          {gift.gift_title && <h3 style={{ margin: "0 0 12px", fontSize: 18 }}>🎉 {gift.gift_title}</h3>}
-          <GiftContent gift={gift} link={cardUrl} track />
+          <GiftContent gift={gift} link={cardUrl} />
         </div>
       )}
 
