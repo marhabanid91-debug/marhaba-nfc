@@ -15,11 +15,12 @@ import CardScanScreen from "./components/CardScanScreen";
 import SerialGateScreen from "./components/SerialGateScreen";
 import GiftView from "./components/GiftView";
 import IdentityDetailScreen from "./components/IdentityDetailScreen";
+import CompanyScreen from "./components/CompanyScreen";
 import InstallPrompt from "./components/InstallPrompt";
 import { useEffect, useRef } from "react";
 import marhabaLogo from "./imports/marhaba-logo.png";
 
-const appScreens = ["home", "identity-detail", "emergency", "business", "events", "accessory", "settings"];
+const appScreens = ["home", "identity-detail", "emergency", "business", "events", "accessory", "settings", "company"];
 
 function LoadingScreen() {
   return (
@@ -80,6 +81,7 @@ function AppShell() {
       {screen === "events" && <EventsScreen />}
       {screen === "accessory" && <AccessoryScreen />}
       {screen === "settings" && <SettingsScreen />}
+      {screen === "company" && <CompanyScreen />}
       {screen === "offline-settings" && <OfflineSettingsScreen />}
       {screen === "privacy-policy" && <PrivacyPolicyScreen />}
       {screen === "reader-emergency" && <ReaderView mode="emergency" />}
