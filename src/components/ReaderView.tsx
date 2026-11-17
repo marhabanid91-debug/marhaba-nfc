@@ -8,6 +8,8 @@ import { HIDE_SENSITIVE_FIELDS, HIDE_SOS_BUTTON } from "../lib/flags";
 import { noteLines } from "../lib/contactNotes";
 import { SocialIcon, socialName } from "./SocialIcon";
 import { supabase } from "../lib/supabase";
+import GiftContent from "./GiftContent";
+import { getGiftBySerial, GiftPublic } from "../lib/gift";
 import { loadUserIdentities, myCardToken } from "../lib/db";
 import { trackOpen, trackClick, metricForHref } from "../lib/stats";
 
@@ -723,6 +725,11 @@ function EventsReader({ identity, color }: { identity: any; color: string }) {
             {lang === "ar" ? statusLabels[d.status]?.ar : statusLabels[d.status]?.en}
           </div>
         )}
+        {(d?.socialLinks as any)?.sponsorName && (
+          <div style={{ marginTop: 10, fontSize: 13, color: "var(--muted-foreground)" }}>
+            🤝 {lang === "ar" ? "برعاية" : "Sponsored by"} <b style={{ color }}>{(d.socialLinks as any).sponsorName}</b>
+          </div>
+        )}
       </div>
 
       {d?.bio && <InfoCard icon="📝" label={lang === "ar" ? "نبذة" : "About"} value={d.bio} />}
@@ -750,57 +757,7 @@ function EventsReader({ identity, color }: { identity: any; color: string }) {
         <div style={{ textAlign: "center", padding: 24, color: "var(--muted-foreground)" }}>{noData}</div>
       )}
 
-      {typeof (d?.socialLinks as any)?.catalog === "string" && /^https:\/\//i.test((d?.socialLinks as any).catalog) && (
-        <a
-          href={(d?.socialLinks as any).catalog}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            marginTop: 12, padding: "14px", borderRadius: 12,
-            background: `${color}18`, color, border: `1.5px solid ${color}55`,
-            fontWeight: 800, fontSize: 15, textDecoration: "none",
-          }}
-        >
-          <span style={{ fontSize: 18 }}>📖</span>
-          {lang === "ar" ? "تصفّح الكتالوج" : "Browse catalog"}
-        </a>
-      )}
-
-      {typeof (d?.socialLinks as any)?.googleReview === "string" && /^https:\/\//i.test((d?.socialLinks as any).googleReview) && (
-        <a
-          href={(d?.socialLinks as any).googleReview}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            marginTop: 12, padding: "14px", borderRadius: 12,
-            background: "#fff", color: "#202124", border: "1px solid #dadce0",
-            fontWeight: 700, fontSize: 15, textDecoration: "none",
-          }}
-        >
-          <span style={{ fontSize: 18 }}>⭐</span>
-          {lang === "ar" ? "قيّمنا على قوقل" : "Rate us on Google"}
-        </a>
-      )}
-
-      {d?.socialLinks && Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview" && k !== "catalog").length > 0 && (
-        <div className="card" style={{ marginTop: 12 }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview" && k !== "catalog").map(([k, v]) => (
-              <a key={k} href={String(v)} target="_blank" rel="noopener noreferrer" style={{
-                display: "inline-flex", alignItems: "center", gap: 8,
-                padding: "6px 14px 6px 8px", borderRadius: 20, fontSize: 12,
-                background: `${color}12`, border: `1px solid ${color}30`, color,
-                textDecoration: "none", fontWeight: 600,
-              }}>
-                <SocialIcon k={k} />
-                {socialName(k)}
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
+      <EventLinks d={d} color={color} lang={lang} cardUrl={currentCardUrl(identity)} />
 
       <LocationCard locations={d?.locations} />
 
@@ -858,4 +815,85 @@ function ContactRow({ icon, value, href }: { icon: string; value: string; href?:
   return href ? (
     <a href={href} style={{ textDecoration: "none", color: "var(--foreground)", display: "block" }}>{content}</a>
   ) : content;
+}
+
+const EVENT_LINKS: { key: string; icon: string; ar: string; en: string }[] = [
+  { key: "marhaba",  icon: "👋", ar: "رابط مرحباً",    en: "Marhaba link" },
+  { key: "linkedin", icon: "💼", ar: "لينكدإن",        en: "LinkedIn" },
+  { key: "works",    icon: "🖼️", ar: "معرض الأعمال",   en: "Portfolio" },
+  { key: "catalog",  icon: "📖", ar: "تصفّح الكتالوج", en: "Browse catalog" },
+];
+
+function EventLinks({ d, color, lang, cardUrl }: { d: any; color: string; lang: string; cardUrl: string }) {
+  const sl = (d?.socialLinks || {}) as Record<string, string>;
+  const serial = typeof sl.giftSerial === "string" ? sl.giftSerial : "";
+  const [gift, setGift] = useState<GiftPublic | null>(null);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    if (serial) getGiftBySerial(serial).then((g) => { if (alive) setGift(g); });
+    else setGift(null);
+    return () => { alive = false; };
+  }, [serial]);
+  const hasContent = gift && (gift.gift_title || gift.gift_items?.length || gift.gift_catalog || gift.gift_promo);
+  const ar = lang === "ar";
+  const title = d?.eventName || d?.name || "";
+
+  const shareEvent = async () => {
+    const text = ar ? `ندعوك لحضور ${title} 🎪` : `Join us at ${title} 🎪`;
+    try {
+      if (navigator.share) { await navigator.share({ title: text, text, url: cardUrl }); return; }
+    } catch { return; }
+    try { await navigator.clipboard.writeText(cardUrl); setCopied(true); setTimeout(() => setCopied(false), 2500); }
+    catch { window.prompt(ar ? "انسخ الرابط وشاركه" : "Copy link", cardUrl); }
+  };
+
+  // رابط تقويم قوقل ليوم كامل
+  const calUrl = (() => {
+    const dt = sl.eventDate;
+    if (!dt || !/^\d{4}-\d{2}-\d{2}$/.test(dt)) return "";
+    const start = dt.replace(/-/g, "");
+    const n = new Date(dt + "T00:00:00Z"); n.setUTCDate(n.getUTCDate() + 1);
+    const end = n.toISOString().slice(0, 10).replace(/-/g, "");
+    return "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+      `&text=${encodeURIComponent(title)}&dates=${start}/${end}` +
+      `&details=${encodeURIComponent(cardUrl)}` + (d?.eventLocation ? `&location=${encodeURIComponent(d.eventLocation)}` : "");
+  })();
+
+  const btn = (bg: string, fg: string, border: string): React.CSSProperties => ({
+    display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "100%", boxSizing: "border-box",
+    marginTop: 12, padding: "14px", borderRadius: 12, background: bg, color: fg, border,
+    fontWeight: 800, fontSize: 15, textDecoration: "none", cursor: "pointer", fontFamily: "inherit",
+  });
+
+  return (
+    <>
+      {/* السحوبات والعروض أولاً: أقوى ما يجذب الزائر */}
+      {hasContent && gift && (
+        <div className="card" style={{ marginTop: 12, textAlign: "center" }}>
+          {gift.gift_title && <h3 style={{ margin: "0 0 12px", fontSize: 18 }}>🎉 {gift.gift_title}</h3>}
+          <GiftContent gift={gift} link={cardUrl} track />
+        </div>
+      )}
+
+      {EVENT_LINKS.filter((l) => typeof sl[l.key] === "string" && /^https:\/\//i.test(sl[l.key])).map((l) => (
+        <a key={l.key} href={sl[l.key]} target="_blank" rel="noopener noreferrer"
+           style={btn(`${color}18`, color, `1.5px solid ${color}55`)}>
+          <span style={{ fontSize: 18 }}>{l.icon}</span>
+          {ar ? l.ar : l.en}
+        </a>
+      ))}
+
+      {calUrl && (
+        <a href={calUrl} target="_blank" rel="noopener noreferrer" style={btn(`${color}18`, color, `1.5px solid ${color}55`)}>
+          <span style={{ fontSize: 18 }}>📅</span>{ar ? "أضف للتقويم" : "Add to calendar"}
+        </a>
+      )}
+
+      <button type="button" onClick={shareEvent} style={btn(color, "#000", "0")}>
+        <span style={{ fontSize: 18 }}>↗</span>
+        {copied ? (ar ? "تم نسخ الرابط ✓" : "Link copied ✓") : (ar ? "شارك الفعالية مع صديق" : "Share event with a friend")}
+      </button>
+    </>
+  );
 }
