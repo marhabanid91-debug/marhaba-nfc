@@ -42,7 +42,7 @@ export interface SocialLinks {
   catalog?: string;
   marhaba?: string;
   works?: string;
-  giftSerial?: string;
+  promo?: { offers?: { title: string; how?: string }[] };
   eventDate?: string;
   sponsorName?: string;
   instagram?: string;
