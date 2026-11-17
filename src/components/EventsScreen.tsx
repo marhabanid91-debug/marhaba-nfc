@@ -1,11 +1,10 @@
 import StatsBox from "./StatsBox";
 import FlowHeader, { useFlow } from "./FlowHeader";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext";
 import { EventStatus, SocialLinks, LocationItem } from "../types";
 import { LocationFields, cleanLocations } from "./LocationFields";
 import { saveEventsData, uploadIdentityPhoto } from "../lib/db";
-import { loadMyGifts, MyGift } from "../lib/gift";
 
 const linkFields: { key: keyof SocialLinks; label: string; icon: string; placeholder: string }[] = [
   { key: "marhaba",  label: "رابط مرحباً",     icon: "👋", placeholder: "https://marhabanid.com/…" },
@@ -13,12 +12,6 @@ const linkFields: { key: keyof SocialLinks; label: string; icon: string; placeho
   { key: "works",    label: "معرض الأعمال",    icon: "🖼️", placeholder: "رابط معرض الأعمال: https://…" },
   { key: "catalog",  label: "الكتالوج",        icon: "📖", placeholder: "رابط الكتالوج: https://…" },
 ];
-
-// يستخرج رقم الهدية GIFT-… سواء كُتب الرقم أو لُصق الرابط كاملاً
-export function parseGiftSerial(raw: string): string {
-  const m = (raw || "").match(/GIFT-[A-Z0-9-]+/i);
-  return m ? m[0].toUpperCase() : "";
-}
 
 function normaliseUrl(raw: string, prefix: string): string {
   const v = raw.trim();
@@ -50,8 +43,9 @@ export default function EventsScreen() {
   const [socialLinks, setSocialLinks] = useState<SocialLinks>(data?.socialLinks || {});
   const [locations, setLocations] = useState<LocationItem[]>(data?.locations || []);
   const [saved, setSaved] = useState(false);
-  const [myGifts, setMyGifts] = useState<MyGift[]>([]);
-  useEffect(() => { loadMyGifts().then(setMyGifts); }, []);
+  const [offers, setOffers] = useState<{ title: string; how?: string }[]>(data?.socialLinks?.promo?.offers || []);
+  const setOffer = (i: number, patch: Partial<{ title: string; how: string }>) =>
+    setOffers((prev) => prev.map((o, k) => (k === i ? { ...o, ...patch } : o)));
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -87,8 +81,11 @@ export default function EventsScreen() {
       const raw = (socialLinks as any)[p.key] || "";
       if (raw) (normLinks as any)[p.key] = normaliseUrl(raw, "https://");
     }
-    const gs = parseGiftSerial(socialLinks.giftSerial || "");
-    if (gs) normLinks.giftSerial = gs; else delete normLinks.giftSerial;
+    delete (normLinks as any).giftSerial;
+    const cleanOffers = offers
+      .map((o) => ({ title: (o.title || "").trim(), how: (o.how || "").trim() }))
+      .filter((o) => o.title || o.how);
+    if (cleanOffers.length) normLinks.promo = { offers: cleanOffers }; else delete normLinks.promo;
     const sp = (socialLinks.sponsorName || "").trim();
     if (sp) normLinks.sponsorName = sp; else delete normLinks.sponsorName;
     if (socialLinks.eventDate) normLinks.eventDate = socialLinks.eventDate; else delete normLinks.eventDate;
@@ -249,32 +246,45 @@ export default function EventsScreen() {
             </div>
           </div>
 
-          {/* صفحة السحوبات والعروض */}
+          {/* العروض والسحوبات: تُنشأ هنا وتظهر في بطاقة الفعالية نفسها */}
           <div>
             <label style={{ fontSize: 13, color: "var(--muted-foreground)", display: "block", marginBottom: 4 }}>
-              🎉 {lang === "ar" ? "صفحة السحوبات والعروض" : "Draws & offers page"} <span style={{ fontSize: 11, opacity: 0.6 }}>— {lang === "ar" ? "اختياري" : "Optional"}</span>
+              🎉 {lang === "ar" ? "العروض والسحوبات" : "Offers & draws"} <span style={{ fontSize: 11, opacity: 0.6 }}>— {lang === "ar" ? "اختياري" : "Optional"}</span>
             </label>
-            <p style={{ fontSize: 12, color: "var(--muted-foreground)", marginBottom: 8 }}>
-              {lang === "ar" ? "تظهر في بطاقة الفعالية بكل أزرارها: المشاركة والتواصل الفوري. وأي تعديل عليها يظهر هنا تلقائياً." : "Shown on the event card with all its buttons."}
+            <p style={{ fontSize: 12, color: "var(--muted-foreground)", marginBottom: 8, lineHeight: 1.7 }}>
+              {lang === "ar" ? "تُنشئينها هنا وتظهر بنفس رابط البطاقة، لكل عرض زر «شارك الآن» وزر «تواصل فوري عبر واتساب»." : "Created here and shown on the same card link."}
             </p>
-            {myGifts.length > 0 && (
-              <select
-                value={myGifts.some((g) => g.serial.toUpperCase() === (socialLinks.giftSerial || "").toUpperCase()) ? socialLinks.giftSerial : ""}
-                onChange={(e) => setSocialLinks({ ...socialLinks, giftSerial: e.target.value })}
-                style={{ width: "100%", marginBottom: 8 }}
-              >
-                <option value="">{lang === "ar" ? "— اختر من هداياك —" : "— Choose from your gifts —"}</option>
-                {myGifts.map((g) => (
-                  <option key={g.serial} value={g.serial}>{g.gift_title ? `${g.gift_title} (${g.serial})` : g.serial}</option>
-                ))}
-              </select>
+            {offers.map((o, i) => (
+              <div key={i} style={{ border: "1px dashed var(--border-strong)", borderRadius: 10, padding: 10, marginBottom: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, color: "var(--muted-foreground)" }}>{lang === "ar" ? `عرض ${i + 1}` : `Offer ${i + 1}`}</span>
+                  <button type="button" onClick={() => setOffers((prev) => prev.filter((_, k) => k !== i))}
+                    style={{ background: "none", border: "none", color: "var(--muted-foreground)", cursor: "pointer", fontSize: 16 }} aria-label="حذف">✕</button>
+                </div>
+                <input
+                  value={o.title}
+                  onChange={(e) => setOffer(i, { title: e.target.value })}
+                  placeholder={lang === "ar" ? "عنوان العرض أو السحب (مثال: سحب على جوال)" : "Offer or draw title"}
+                  maxLength={80}
+                  style={{ marginBottom: 6 }}
+                />
+                <textarea
+                  value={o.how || ""}
+                  onChange={(e) => setOffer(i, { how: e.target.value })}
+                  placeholder={lang === "ar" ? "طريقة المشاركة (مثال: تابعنا وشارك المنشور وعلّم ٣ من أصدقائك)" : "How to join"}
+                  maxLength={600}
+                  rows={3}
+                  style={{ resize: "vertical" }}
+                />
+              </div>
+            ))}
+            {offers.length < 20 && (
+              <button type="button" onClick={() => setOffers((prev) => [...prev, { title: "", how: "" }])}
+                style={{ width: "100%", padding: 9, borderRadius: 10, cursor: "pointer", fontFamily: "inherit",
+                  background: "transparent", border: "1px dashed var(--primary)", color: "var(--primary)", fontWeight: 600 }}>
+                ➕ {lang === "ar" ? "إضافة عرض أو سحب" : "Add offer or draw"}
+              </button>
             )}
-            <input
-              value={socialLinks.giftSerial || ""}
-              onChange={(e) => setSocialLinks({ ...socialLinks, giftSerial: e.target.value })}
-              placeholder={lang === "ar" ? "أو الصق رقم الهدية / رابطها: GIFT-…" : "Or paste gift code / link: GIFT-…"}
-              style={{ direction: "ltr" }}
-            />
           </div>
         </div>
 
