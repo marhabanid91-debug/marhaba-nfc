@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useApp } from "../context/AppContext";
 import { useCompany } from "../hooks/useCompany";
 import AdminPanel from "./AdminPanel";
@@ -8,7 +9,7 @@ const SITE = "https://welcome.marhabanid.com";
 
 type View = "menu" | "help" | "services";
 
-// الخدمات الرقمية الأخرى: عدّلي هذه القائمة بحرية (الأيقونة، العنوان، الوصف، ونص رسالة الاستفسار)
+// الخدمات الرقمية الأخرى: عدّل هذه القائمة بحرية (الأيقونة، العنوان، الوصف، ونص رسالة الاستفسار)
 const SERVICES: { icon: string; title: string; desc: string; msg: string }[] = [
   { icon: "🍽️", title: "منيو وكتالوج رقمي", desc: "للمطاعم والكافيهات والمتاجر: باركود ثابت ومحتوى يتجدد في أي وقت", msg: "أرغب بالاستفسار عن المنيو/الكتالوج الرقمي بباركود ثابت" },
   { icon: "🔐", title: "المستندات المحمية", desc: "ملفات خاصة بروابط برمز أو مدة أو مرة واحدة، في بطاقة الطوارئ أو الأعمال", msg: "أرغب بتفعيل خاصية المستندات المحمية" },
@@ -19,7 +20,7 @@ const SERVICES: { icon: string; title: string; desc: string; msg: string }[] = [
   { icon: "🚚", title: "تأكيد استلام الطلبات", desc: "لشركات التوصيل: يلمس العميل بطاقة المندوب فيُسجَّل التسليم والموقع", msg: "أرغب بالاستفسار عن خدمة تأكيد استلام الطلبات لشركة توصيل" },
   { icon: "🛡️", title: "بطاقات الطوارئ والعائلة", desc: "بيانات الإسعاف وأرقام الأهل عند الحاجة", msg: "أرغب بالاستفسار عن بطاقات الطوارئ للعائلة" },
   { icon: "🎨", title: "تصميم هوية وصفحة تعريفية", desc: "شعار وهوية بصرية وصفحة رقمية لنشاطك", msg: "أرغب بالاستفسار عن تصميم هوية وصفحة رقمية" },
-  { icon: "💡", title: "خدمة أخرى حسب طلبك", desc: "اكتبي لنا فكرتك ونفكر معك في الحل", msg: "لدي فكرة لخدمة رقمية وأرغب بمناقشتها" },
+  { icon: "💡", title: "خدمة أخرى حسب طلبك", desc: "اكتب لنا فكرتك ونفكر معك في الحل", msg: "لدي فكرة لخدمة رقمية وأرغب بمناقشتها" },
 ];
 
 // قائمة الثلاث خطوط في الصفحة الرئيسية: تعليمات، الإكسسوار، الإعدادات، الدعم…
@@ -41,12 +42,12 @@ export default function HomeMenu({ onClose }: { onClose: () => void }) {
   };
 
   const steps: { t: string; d: string }[] = ar ? [
-    { t: "ابدئي بإضافة هوية", d: "من الصفحة الرئيسية اضغطي «إضافة هوية جديدة»." },
-    { t: "اربطي بطاقتك", d: "اكتبي رقم البطاقة المطبوع عليها (MARHABA-…) ورمز التفعيل المرفق معها، ثم اضغطي ربط." },
-    { t: "اختاري نوع الهوية", d: "الطوارئ لبيانات الإسعاف وأرقام ذويك، الأعمال لبطاقتك المهنية، الفعاليات لبطاقة فعالية أو معرض." },
-    { t: "املئي بياناتك", d: "الاسم والصورة والجوال والروابط، وأضيفي موقعاً أو أكثر بزر ➕ عند الحاجة. كل حقل اختياري عدا الاسم." },
-    { t: "احفظي وجرّبي", d: "اضغطي «حفظ». ثم قرّبي البطاقة من جوال آخر أو امسحي رمز QR لترى كيف تظهر للناس." },
-    { t: "عدّلي في أي وقت", d: "افتحي الهوية من القائمة وغيّري بياناتها، والبطاقة نفسها لا تتغير: الرابط ثابت والمحتوى يتحدث." },
+    { t: "ابدأ بإضافة هوية", d: "من الصفحة الرئيسية اضغط «إضافة هوية جديدة»." },
+    { t: "اربط بطاقتك", d: "اكتب رقم البطاقة المطبوع عليها (MARHABA-…) ورمز التفعيل المرفق معها، ثم اضغط ربط." },
+    { t: "اختر نوع الهوية", d: "الطوارئ لبيانات الإسعاف وأرقام ذويك، الأعمال لبطاقتك المهنية، الفعاليات لبطاقة فعالية أو معرض." },
+    { t: "املأ بياناتك", d: "الاسم والصورة والجوال والروابط، وأضف موقعاً أو أكثر بزر ➕ عند الحاجة. كل حقل اختياري عدا الاسم." },
+    { t: "احفظ وجرّب", d: "اضغط «حفظ». ثم قرّب البطاقة من جوال آخر أو امسح رمز QR لترى كيف تظهر للناس." },
+    { t: "عدّل في أي وقت", d: "افتح الهوية من القائمة وغيّر بياناتها، والبطاقة نفسها لا تتغير: الرابط ثابت والمحتوى يتحدث." },
   ] : [
     { t: "Start a new identity", d: "From Home tap “Add new identity”." },
     { t: "Link your card", d: "Enter the card number printed on it (MARHABA-…) and the activation code that came with it." },
@@ -60,7 +61,7 @@ export default function HomeMenu({ onClose }: { onClose: () => void }) {
     <button key={label} onClick={onClick} style={{
       display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "13px 4px", background: "none",
       border: "none", borderBottom: "1px solid var(--border)", color: "var(--foreground)", fontFamily: "inherit",
-      fontSize: 15, cursor: "pointer", textAlign: "start",
+      fontSize: 15, cursor: "pointer", textAlign: "start", justifyContent: "flex-start",
     }}>
       <span style={{ fontSize: 22, width: 30, textAlign: "center" }}>{icon}</span>
       <span style={{ flex: 1 }}>
@@ -72,11 +73,12 @@ export default function HomeMenu({ onClose }: { onClose: () => void }) {
 
   if (admin) return <AdminPanel onClose={() => setAdmin(false)} />;
 
-  return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+  // نعرض القائمة في body مباشرة حتى لا تُقصّ بحركة الصفحة ولا يغطيها الشريط السفلي
+  return createPortal(
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
       <div onClick={(e) => e.stopPropagation()} dir={ar ? "rtl" : "ltr"} style={{
-        width: "100%", maxWidth: 520, maxHeight: "86vh", overflowY: "auto", background: "var(--card)",
-        borderRadius: "20px 20px 0 0", padding: "18px 20px 28px", border: "1px solid var(--border-strong)",
+        width: "100%", maxWidth: 520, maxHeight: "88vh", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain", touchAction: "pan-y", background: "var(--card)",
+        borderRadius: "20px 20px 0 0", padding: "18px 20px calc(28px + env(safe-area-inset-bottom))", border: "1px solid var(--border-strong)",
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
           <div style={{ fontWeight: 800, fontSize: 18 }}>
@@ -91,7 +93,7 @@ export default function HomeMenu({ onClose }: { onClose: () => void }) {
         {view === "menu" && (
           <>
             {item("📖", ar ? "تعليمات إنشاء الهوية" : "How to create an identity", ar ? "الخطوات من الربط حتى المشاركة" : "Steps from linking to sharing", () => setView("help"))}
-            {item("🧩", ar ? "خدمات رقمية أخرى" : "Other digital services", ar ? "منيو رقمي، شركات، فعاليات، توصيل… واسألي عبر واتساب" : "Ask us on WhatsApp", () => setView("services"))}
+            {item("🧩", ar ? "خدمات رقمية أخرى" : "Other digital services", ar ? "منيو رقمي، شركات، فعاليات، توصيل… واسأل عبر واتساب" : "Ask us on WhatsApp", () => setView("services"))}
             {isAdmin && item("🛠", "لوحة المشتركين", "تفعيل الخصائص المدفوعة بالبريد", () => setAdmin(true))}
             {org && item("🏢", ar ? "مرحباً للشركات" : "Marhaba for Business", org.name, () => go("company"))}
             {item("📤", ar ? "شارك التطبيق" : "Share the app", null, share)}
@@ -102,7 +104,7 @@ export default function HomeMenu({ onClose }: { onClose: () => void }) {
         {view === "services" && (
           <div style={{ marginTop: 6 }}>
             <p style={{ fontSize: 12, color: "var(--muted-foreground)", lineHeight: 1.7, margin: "0 0 6px" }}>
-              اضغطي على الخدمة لتفتح محادثة واتساب جاهزة للاستفسار.
+              اضغط على الخدمة لتفتح محادثة واتساب جاهزة للاستفسار.
             </p>
             {SERVICES.map((sv) => item(sv.icon, sv.title, sv.desc, () => {
               window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`مرحباً مرحبا NFC 👋\n${sv.msg}`)}`, "_blank", "noopener");
@@ -127,6 +129,7 @@ export default function HomeMenu({ onClose }: { onClose: () => void }) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
