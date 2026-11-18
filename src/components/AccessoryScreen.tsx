@@ -4,7 +4,6 @@ import { checkSerialAvailability, activateCard, unlinkSerial } from "../lib/db";
 import { supabase } from "../lib/supabase";
 import MyGifts from "./MyGifts";
 
-const WA_NUMBER = "966500816798";
 const SERIAL_PREFIX = "MARHABA-";
 
 type Section = "link" | "gifts" | null;
@@ -236,35 +235,18 @@ export default function AccessoryScreen() {
           )}
         </Accordion>
 
-        {/* أعمال وهدايا: للمدير والمشتركين فقط، وغيرهم يرون زر طلب التفعيل */}
-        <Accordion
-          icon="🎁"
-          title={ar ? "أعمال وهدايا" : "Works & gifts"}
-          summary={giftsSummary}
-          open={open === "gifts"}
-          onToggle={() => toggle("gifts")}
-        >
-          {hasGifts ? (
+        {/* أعمال وهدايا: للمدير والمشتركين فقط، وغيرهم لا يرون شيئاً (معروضة في قائمة ☰) */}
+        {hasGifts && (
+          <Accordion
+            icon="🎁"
+            title={ar ? "أعمال وهدايا" : "Works & gifts"}
+            summary={giftsSummary}
+            open={open === "gifts"}
+            onToggle={() => toggle("gifts")}
+          >
             <MyGifts hideTitle onCount={setGiftCount} />
-          ) : (
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 13, opacity: 0.75, lineHeight: 1.8 }}>
-                {ar ? "خاصية مدفوعة. اطلب التفعيل وسنفعّلها لحسابك بعد التواصل." : "Paid feature. Request activation and we will enable it for your account."}
-              </div>
-              <a
-                className="btn-primary"
-                style={{ display: "block", marginTop: 12, textDecoration: "none" }}
-                href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(
-                  `أرغب بتفعيل خاصية أعمال وهدايا لحسابي${(supabaseUser as any)?.email ? ` (${(supabaseUser as any).email})` : ""}`
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {ar ? "💬 اطلب التفعيل عبر واتساب" : "💬 Request activation on WhatsApp"}
-              </a>
-            </div>
-          )}
-        </Accordion>
+          </Accordion>
+        )}
       </div>
     </div>
   );
