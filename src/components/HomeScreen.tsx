@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useApp } from "../context/AppContext";
 import marhabaLogo from "../imports/marhaba-logo.png";
 import { ActiveMode, Identity } from "../types";
+import HomeMenu from "./HomeMenu";
 
 export const modeConfig: Record<ActiveMode, { icon: string; color: string; label: { ar: string; en: string } }> = {
   business: { icon: "💼", color: "var(--business)", label: { ar: "الأعمال", en: "Business" } },
@@ -81,6 +82,7 @@ export default function HomeScreen() {
   const { t, lang, identities, setScreen, setActiveIdentityId, setGateSerial } = useApp();
   const isAr = lang === "ar";
   const [query, setQuery] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const openIdentity = (identity: Identity) => {
     setActiveIdentityId(identity.id);
@@ -95,6 +97,7 @@ export default function HomeScreen() {
 
   return (
     <div className="screen fade-in">
+      {menuOpen && <HomeMenu onClose={() => setMenuOpen(false)} />}
       <div style={{ padding: "24px 20px 0" }}>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
@@ -102,13 +105,19 @@ export default function HomeScreen() {
             <img src={marhabaLogo} alt="مرحبا NFC" style={{ width: 44, height: "auto" }} />
             <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{t("homeTitle")}</h1>
           </div>
-          <div style={{
-            width: 40, height: 40, borderRadius: "50%",
-            background: "var(--card-elevated)", border: "1px solid var(--border-strong)",
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
-          }}>
-            👤
-          </div>
+          <button
+            onClick={() => setMenuOpen(true)}
+            aria-label={isAr ? "القائمة" : "Menu"}
+            style={{
+              width: 40, height: 40, borderRadius: "50%", cursor: "pointer",
+              background: "var(--card-elevated)", border: "1px solid var(--border-strong)", color: "var(--foreground)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+              <line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="17" x2="20" y2="17" />
+            </svg>
+          </button>
         </div>
 
         {/* Add identity button */}
