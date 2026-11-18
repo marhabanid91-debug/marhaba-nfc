@@ -9,6 +9,7 @@ import { noteLines } from "../lib/contactNotes";
 import { SocialIcon, socialName } from "./SocialIcon";
 import { supabase } from "../lib/supabase";
 import GiftContent from "./GiftContent";
+import DeliveryConfirm from "./DeliveryConfirm";
 import { GiftPublic } from "../lib/gift";
 import { loadUserIdentities, myCardToken } from "../lib/db";
 import { trackOpen, trackClick, metricForHref } from "../lib/stats";
@@ -601,6 +602,10 @@ function BusinessReader({ identity, color }: { identity: any; color: string }) {
         {d?.company && <div style={{ fontSize: 13, color: "var(--muted-foreground)" }}>{d.company}</div>}
       </div>
 
+      {(d?.socialLinks as any)?.deliveryConfirm === "1" && identity?.id && (
+        <DeliveryConfirm identityId={identity.id} courier={d?.name} company={d?.company} wa={(d?.socialLinks as any)?.deliveryWa} color={color} />
+      )}
+
       {d?.bio && <InfoCard icon="📝" label={lang === "ar" ? "نبذة" : "About"} value={d.bio} />}
 
       {(d?.phone || d?.email || d?.website || d?.location) && (
@@ -650,13 +655,13 @@ function BusinessReader({ identity, color }: { identity: any; color: string }) {
         </a>
       )}
 
-      {d?.socialLinks && Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview" && k !== "catalog").length > 0 && (
+      {d?.socialLinks && Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview" && k !== "catalog" && k !== "deliveryConfirm" && k !== "deliveryWa").length > 0 && (
         <div className="card" style={{ marginTop: 12 }}>
           <div style={{ fontSize: 13, color: "var(--muted-foreground)", marginBottom: 12 }}>
             {lang === "ar" ? "وسائل التواصل الاجتماعي" : "Social Media"}
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview" && k !== "catalog").map(([k, v]) => (
+            {Object.entries(d.socialLinks).filter(([k, v]) => v && k !== "googleReview" && k !== "catalog" && k !== "deliveryConfirm" && k !== "deliveryWa").map(([k, v]) => (
               <a key={k} href={String(v)} target="_blank" rel="noopener noreferrer" style={{
                 display: "inline-flex", alignItems: "center", gap: 8,
                 padding: "6px 14px 6px 8px", borderRadius: 20, fontSize: 12,
