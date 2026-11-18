@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "../lib/supabase";
 
 type Lookup = {
@@ -13,8 +14,8 @@ const fmt = (iso?: string | null) => {
 };
 
 const ERR: Record<string, string> = {
-  not_admin: "هذا الحساب ليس مديراً", no_user: "لا يوجد حساب بهذا البريد، اطلبي منه التسجيل أولاً",
-  no_profile: "تعذّر إنشاء ملف الحساب", name_required: "اكتبي اسم الشركة", bad_feature: "خاصية غير معروفة",
+  not_admin: "هذا الحساب ليس مديراً", no_user: "لا يوجد حساب بهذا البريد، اطلب منه التسجيل أولاً",
+  no_profile: "تعذّر إنشاء ملف الحساب", name_required: "اكتب اسم الشركة", bad_feature: "خاصية غير معروفة",
 };
 
 // لوحة المشتركين: للمدير فقط. تفعّل أو توقف الخصائص المدفوعة بالبريد بدل SQL
@@ -40,7 +41,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
     setBusy(true); setInfo(null);
     const { data, error } = await supabase.rpc("admin_lookup", { p_email: mail });
     setBusy(false);
-    if (error || !data) return flash("تعذّر البحث. تأكدي من تشغيل admin-panel.sql وأنك مدير");
+    if (error || !data) return flash("تعذّر البحث. تأكد من تشغيل admin-panel.sql وأنك مدير");
     const r = data as Lookup;
     setInfo(r);
     if (!r.found) flash(ERR.no_user);
@@ -80,13 +81,13 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
 
   const active = (until: string | null | undefined, plan?: boolean) => !!plan && (!until || new Date(until) > new Date());
 
-  return (
-    <div dir="rtl" style={{ position: "fixed", inset: 0, zIndex: 90, overflowY: "auto", background: "var(--background)", color: "var(--foreground)" }}>
+  return createPortal(
+    <div dir="rtl" style={{ position: "fixed", inset: 0, zIndex: 210, overflowY: "auto", background: "var(--background)", color: "var(--foreground)", overscrollBehavior: "contain" }}>
       <div style={{ maxWidth: 520, margin: "0 auto", padding: "20px 20px 40px" }}>
         <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--primary)", fontFamily: "inherit", fontSize: 14, fontWeight: 600, cursor: "pointer", padding: "0 0 12px" }}>→ رجوع</button>
         <h1 style={{ fontSize: 20, fontWeight: 800, margin: "0 0 4px" }}>🛠 لوحة المشتركين</h1>
         <p style={{ fontSize: 12, color: "var(--muted-foreground)", margin: "0 0 14px", lineHeight: 1.7 }}>
-          اكتبي بريد العميل (الذي يسجّل به دخوله) ثم اضغطي بحث، وفعّلي الخاصية بعد استلام المبلغ.
+          اكتب بريد العميل (الذي يسجّل به دخوله) ثم اضغط بحث، وفعّل الخاصية بعد استلام المبلغ.
         </p>
         {msg && <div style={{ background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 10, padding: "10px 14px", fontSize: 13, marginBottom: 12 }}>{msg}</div>}
 
@@ -120,6 +121,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
           </button>
         ))}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
