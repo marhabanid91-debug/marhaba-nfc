@@ -153,11 +153,21 @@ function withName<T extends { name: string }>(section: T, identityName?: string 
 }
 
 export async function loadUserIdentities(userId: string): Promise<Identity[]> {
-  const { data: identityRows, error } = await supabase
+  // هويات موظفي الشركة (organization_id) تُدار من شاشة الشركة ولا تظهر في هويات صاحب الحساب.
+  // إن لم يكن العمود موجوداً بعد (قبل تشغيل company-b.sql) نعود للاستعلام القديم.
+  let { data: identityRows, error } = await supabase
     .from("identities")
     .select("*")
     .eq("user_id", userId)
+    .is("organization_id", null)
     .order("created_at", { ascending: true });
+  if (error) {
+    ({ data: identityRows, error } = await supabase
+      .from("identities")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true }));
+  }
 
   if (error || !identityRows?.length) return [];
 
