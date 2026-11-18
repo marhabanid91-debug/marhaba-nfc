@@ -76,32 +76,8 @@ export default function VaultEditor({
   // قبل تشغيل SQL أو بدون حساب: لا يظهر شيء
   if (!supabaseUser || access === null) return null;
 
-  // غير مشترك: بطاقة طلب التفعيل
-  if (access === false) {
-    const email = (supabaseUser as any)?.email;
-    const wa = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(
-      `أرغب بتفعيل خاصية المستندات المحمية لحسابي${email ? ` (${email})` : ""}`
-    )}`;
-    return (
-      <div dir={ar ? "rtl" : "ltr"} style={{
-        border: `1px solid ${accent}40`, background: `${accent}0d`, borderRadius: 14, padding: 14, textAlign: "center",
-      }}>
-        <div style={{ fontSize: 26 }}>🔐</div>
-        <div style={{ fontWeight: 800, fontSize: 15, margin: "4px 0" }}>
-          {ar ? `${VAULT_NAME.ar} — خاصية مدفوعة` : `${VAULT_NAME.en} — paid feature`}
-        </div>
-        <div style={{ fontSize: 12.5, color: "var(--muted-foreground)", lineHeight: 1.8 }}>
-          {ar ? "اطلب التفعيل وسنفعّلها لحسابك بعد التواصل." : "Request activation and we will enable it for your account."}
-        </div>
-        <a href={wa} target="_blank" rel="noopener noreferrer" style={{
-          display: "block", marginTop: 10, padding: "11px 16px", borderRadius: 12, background: accent,
-          color: "#000", fontWeight: 700, fontSize: 14, textDecoration: "none",
-        }}>
-          {ar ? "💬 اطلب التفعيل عبر واتساب" : "💬 Request activation on WhatsApp"}
-        </a>
-      </div>
-    );
-  }
+  // غير مشترك: لا يظهر شيء (الخاصية معروضة في قائمة ☰ بالصفحة الرئيسية)
+  if (access === false) return null;
 
   if (!loaded || !info) return null;
 
