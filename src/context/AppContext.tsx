@@ -114,26 +114,58 @@ export function AppProvider({ children }: { children: ReactNode }) {
   userRef.current = supabaseUser;
   const pushedRef = useRef(false);
   const fromPopRef = useRef(false);
+  // عمق المدخل الحالي في سجل المتصفح: 0 = بداية السجل (نعترض عندها الخروج ونطلب تأكيداً)
+  const depthRef = useRef(0);
+  const exitArmedRef = useRef(false);
+  const [exitHint, setExitHint] = useState(false);
 
   const setScreen = (s: Screen) => {
     if (s === screen) return;
     setPrevScreen(screen);
     pushedRef.current = true;
-    try { window.history.pushState({ app: true, screen: s }, ""); } catch {}
+    depthRef.current += 1;
+    try { window.history.pushState({ app: true, screen: s, d: depthRef.current }, ""); } catch {}
     setScreenState(s);
   };
+
+  // عند أول تحميل: مدخل أساس (d=0) ثم مدخل فوقه (d=1)، حتى يمكن اعتراض الرجوع للخروج
+  useEffect(() => {
+    try {
+      const st = window.history.state as { app?: boolean; d?: number } | null;
+      if (st && st.app) { depthRef.current = st.d ?? 0; return; } // إعادة تحميل: السجل موجود
+      window.history.replaceState({ app: true, screen: screenRef.current, d: 0 }, "");
+      window.history.pushState({ app: true, screen: screenRef.current, d: 1 }, "");
+      depthRef.current = 1;
+    } catch {}
+  }, []);
 
   // أي تغيير آخر للصفحة (تحميل أولي، توجيه بعد الدخول…) يستبدل المدخل الحالي ولا يضيف مدخلاً جديداً
   useEffect(() => {
     if (pushedRef.current) { pushedRef.current = false; return; }
     if (fromPopRef.current) { fromPopRef.current = false; return; }
-    try { window.history.replaceState({ app: true, screen }, ""); } catch {}
+    try { window.history.replaceState({ app: true, screen, d: depthRef.current }, ""); } catch {}
   }, [screen]);
 
   useEffect(() => {
     const onPop = (e: PopStateEvent) => {
-      const st = e.state as { app?: boolean; screen?: Screen } | null;
+      const st = e.state as { app?: boolean; screen?: Screen; d?: number } | null;
       if (!st || !st.app || !st.screen) return;
+      depthRef.current = st.d ?? 0;
+      // وصلنا لبداية السجل: الضغطة الأولى تُظهر تنبيهاً، والثانية خلال ثوانٍ تخرج
+      if (st.d === 0) {
+        if (!userRef.current || exitArmedRef.current) {
+          exitArmedRef.current = false;
+          setExitHint(false);
+          try { window.history.back(); } catch {}
+          return;
+        }
+        exitArmedRef.current = true;
+        setExitHint(true);
+        window.setTimeout(() => { exitArmedRef.current = false; setExitHint(false); }, 2500);
+        depthRef.current = 1;
+        try { window.history.pushState({ app: true, screen: screenRef.current, d: 1 }, ""); } catch {}
+        return;
+      }
       let target: Screen = st.screen;
       // بعد تسجيل الدخول لا نعود لشاشات الدخول أو المسح، بل للرئيسية
       if (userRef.current && (target === "auth" || target === "card-scan" || target === "serial-gate")) target = "home";
@@ -376,6 +408,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      {exitHint && (
+        <div style={{
+          position: "fixed", bottom: 96, left: "50%", transform: "translateX(-50%)", zIndex: 300,
+          background: "rgba(0,0,0,0.88)", color: "#fff", padding: "10px 18px", borderRadius: 20, fontSize: 13,
+          border: "1px solid var(--border-strong)", whiteSpace: "nowrap",
+        }}>
+          {lang === "ar" ? "اضغط رجوع مرة أخرى للخروج" : "Press back again to exit"}
+        </div>
+      )}
     </AppContext.Provider>
   );
 }
