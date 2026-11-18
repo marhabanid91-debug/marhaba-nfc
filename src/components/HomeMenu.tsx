@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useApp } from "../context/AppContext";
 import { useCompany } from "../hooks/useCompany";
 import AdminPanel from "./AdminPanel";
+import { useOverlayBack } from "../lib/overlayBack";
 
 const WA_NUMBER = "966500816798";
 const SITE = "https://welcome.marhabanid.com";
@@ -31,7 +32,14 @@ export default function HomeMenu({ onClose }: { onClose: () => void }) {
   const [view, setView] = useState<View>("menu");
   const [admin, setAdmin] = useState(false);
 
-  const go = (s: string) => { onClose(); setScreen(s as any); };
+  // زر الرجوع في الجوال: يغلق المستوى الأعلى (لوحة المشتركين ثم الصفحة الفرعية ثم القائمة)
+  const ob = useOverlayBack(() => {
+    if (admin) setAdmin(false);
+    else if (view !== "menu") setView("menu");
+    else onClose();
+  });
+  const openView = (v: View) => { ob.push(); setView(v); };
+  const go = (s: string) => ob.leave(() => { onClose(); setScreen(s as any); });
 
   const share = async () => {
     const text = ar ? "مرحبا NFC: بطاقات ذكية للأعمال والطوارئ والفعاليات" : "Marhaba NFC: smart cards for business, emergency and events";
@@ -73,11 +81,11 @@ export default function HomeMenu({ onClose }: { onClose: () => void }) {
     </button>
   );
 
-  if (admin) return <AdminPanel onClose={() => setAdmin(false)} />;
+  if (admin) return <AdminPanel onClose={ob.back} />;
 
   // نعرض القائمة في body مباشرة حتى لا تُقصّ بحركة الصفحة ولا يغطيها الشريط السفلي
   return createPortal(
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+    <div onClick={ob.back} style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
       <div onClick={(e) => e.stopPropagation()} dir={ar ? "rtl" : "ltr"} style={{
         width: "100%", maxWidth: 520, maxHeight: "88vh", overflowY: "auto", WebkitOverflowScrolling: "touch", overscrollBehavior: "contain", touchAction: "pan-y", background: "var(--card)",
         borderRadius: "20px 20px 0 0", padding: "18px 20px calc(28px + env(safe-area-inset-bottom))", border: "1px solid var(--border-strong)",
@@ -86,7 +94,7 @@ export default function HomeMenu({ onClose }: { onClose: () => void }) {
           <div style={{ fontWeight: 800, fontSize: 18 }}>
             {view === "help" ? (ar ? "📖 طريقة إنشاء هويتك" : "📖 How to create your identity") : view === "services" ? (ar ? "🧩 خدمات رقمية أخرى" : "🧩 Other digital services") : (ar ? "القائمة" : "Menu")}
           </div>
-          <button onClick={view !== "menu" ? () => setView("menu") : onClose} aria-label="close"
+          <button onClick={ob.back} aria-label="close"
             style={{ background: "none", border: "none", color: "var(--muted-foreground)", fontSize: 22, cursor: "pointer" }}>
             {view !== "menu" ? (ar ? "→" : "←") : "✕"}
           </button>
@@ -94,9 +102,9 @@ export default function HomeMenu({ onClose }: { onClose: () => void }) {
 
         {view === "menu" && (
           <>
-            {item("📖", ar ? "تعليمات إنشاء الهوية" : "How to create an identity", ar ? "الخطوات من الربط حتى المشاركة" : "Steps from linking to sharing", () => setView("help"))}
-            {item("🧩", ar ? "خدمات رقمية أخرى" : "Other digital services", ar ? "منيو رقمي، شركات، فعاليات، توصيل… واسأل عبر واتساب" : "Ask us on WhatsApp", () => setView("services"))}
-            {isAdmin && item("🛠", "لوحة المشتركين", "تفعيل الخصائص المدفوعة بالبريد", () => setAdmin(true))}
+            {item("📖", ar ? "تعليمات إنشاء الهوية" : "How to create an identity", ar ? "الخطوات من الربط حتى المشاركة" : "Steps from linking to sharing", () => openView("help"))}
+            {item("🧩", ar ? "خدمات رقمية أخرى" : "Other digital services", ar ? "منيو رقمي، شركات، فعاليات، توصيل… واسأل عبر واتساب" : "Ask us on WhatsApp", () => openView("services"))}
+            {isAdmin && item("🛠", "لوحة المشتركين", "تفعيل الخصائص المدفوعة بالبريد", () => { ob.push(); setAdmin(true); })}
             {org && item("🏢", ar ? "مرحباً للشركات" : "Marhaba for Business", org.name, () => go("company"))}
             {item("📤", ar ? "شارك التطبيق" : "Share the app", null, share)}
             {item("🌐", ar ? "موقع مرحبا" : "Website", "welcome.marhabanid.com", () => window.open(SITE, "_blank", "noopener"))}
