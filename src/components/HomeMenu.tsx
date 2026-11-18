@@ -46,6 +46,7 @@ export default function HomeMenu({ onClose }: { onClose: () => void }) {
     { t: "اربط بطاقتك", d: "اكتب رقم البطاقة المطبوع عليها (MARHABA-…) ورمز التفعيل المرفق معها، ثم اضغط ربط." },
     { t: "اختر نوع الهوية", d: "الطوارئ لبيانات الإسعاف وأرقام ذويك، الأعمال لبطاقتك المهنية، الفعاليات لبطاقة فعالية أو معرض." },
     { t: "املأ بياناتك", d: "الاسم والصورة والجوال والروابط، وأضف موقعاً أو أكثر بزر ➕ عند الحاجة. كل حقل اختياري عدا الاسم." },
+    { t: "فعّل الوضع النشط", d: "افتح الهوية من القائمة، ومن قسم «الوضع النشط» اختر ما يظهر عند مسح البطاقة: الطوارئ أو الأعمال أو الفعاليات. يمكنك تبديل الوضع النشط في أي وقت، ويرى من يمسح البطاقة بيانات الوضع النشط فقط." },
     { t: "احفظ وجرّب", d: "اضغط «حفظ». ثم قرّب البطاقة من جوال آخر أو امسح رمز QR لترى كيف تظهر للناس." },
     { t: "عدّل في أي وقت", d: "افتح الهوية من القائمة وغيّر بياناتها، والبطاقة نفسها لا تتغير: الرابط ثابت والمحتوى يتحدث." },
   ] : [
@@ -53,6 +54,7 @@ export default function HomeMenu({ onClose }: { onClose: () => void }) {
     { t: "Link your card", d: "Enter the card number printed on it (MARHABA-…) and the activation code that came with it." },
     { t: "Choose the type", d: "Emergency for medical info and contacts, Business for your professional card, Events for an event or exhibition." },
     { t: "Fill in your details", d: "Name, photo, phone and links. Use ➕ to add more locations. Everything is optional except the name." },
+    { t: "Set the active mode", d: "Open the identity from the list and, under “Active mode”, choose what a scan shows: Emergency, Business or Events. You can switch it any time, and whoever scans the card sees only the active mode." },
     { t: "Save and test", d: "Tap Save, then tap the card on another phone or scan the QR to see what people see." },
     { t: "Edit any time", d: "Open the identity from the list and change it. The link stays the same and the content updates." },
   ];
