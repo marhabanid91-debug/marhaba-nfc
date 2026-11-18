@@ -1,62 +1,81 @@
-import { useApp } from "../context/AppContext";
-import { useCompany } from "../hooks/useCompany";
+import { supabase } from "./supabase";
 
-const upcoming = [
-  { icon: "👥", title: "الموظفون", desc: "قائمة بطاقات الشركة، إضافة وتعديل ونقل البطاقة لموظف جديد" },
-  { icon: "🎨", title: "هوية الشركة الموحدة", desc: "شعار وروابط وفروع الشركة تظهر في كل بطاقة، وتتحدث مرة واحدة للجميع" },
-  { icon: "📥", title: "إضافة جماعية", desc: "الصقي قائمة الموظفين لإنشاء بطاقاتهم دفعة واحدة" },
-  { icon: "📊", title: "إحصائيات الشركة", desc: "عدد مرات المسح لكل موظف وللشركة كلها" },
-];
+export interface Employee {
+  id: string;
+  name: string;
+  jobTitle: string;
+  phone: string;
+  email: string;
+  serial: string | null;
+}
 
-export default function CompanyScreen() {
-  const { setScreen, lang } = useApp();
-  const { org, loading } = useCompany();
-  const ar = lang === "ar";
+export interface EmployeeInput {
+  name: string;
+  jobTitle: string;
+  phone: string;
+  email: string;
+}
 
-  return (
-    <div className="screen fade-in">
-      <div style={{ padding: "24px 20px 0" }}>
-        <button
-          onClick={() => setScreen("settings")}
-          style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--primary)", fontFamily: "inherit", fontSize: 14, fontWeight: 600, cursor: "pointer", padding: "0 0 12px" }}
-        >
-          <span>{ar ? "→" : "←"}</span>{ar ? "رجوع" : "Back"}
-        </button>
+export async function listEmployees(orgId: string): Promise<Employee[]> {
+  const { data: ids, error } = await supabase
+    .from("identities")
+    .select("id, name, serial_number")
+    .eq("organization_id", orgId)
+    .order("created_at", { ascending: true });
+  if (error || !ids?.length) return [];
+  const { data: biz } = await supabase
+    .from("business_data")
+    .select("identity_id, name, job_title, phone, email")
+    .in("identity_id", ids.map((r: any) => r.id));
+  const byId = new Map<string, any>((biz || []).map((b: any) => [b.identity_id, b]));
+  return ids.map((r: any) => {
+    const b = byId.get(r.id) || {};
+    return {
+      id: r.id,
+      name: b.name || r.name || "",
+      jobTitle: b.job_title || "",
+      phone: b.phone || "",
+      email: b.email || "",
+      serial: r.serial_number || null,
+    };
+  });
+}
 
-        {!loading && !org ? (
-          <div className="card" style={{ textAlign: "center", padding: 24 }}>
-            <div style={{ fontSize: 40, marginBottom: 8 }}>🔒</div>
-            <div style={{ fontWeight: 700 }}>خاصية الشركات غير مفعّلة لحسابك</div>
-            <div style={{ fontSize: 13, opacity: 0.7, marginTop: 6 }}>تواصل معنا لتفعيلها.</div>
-          </div>
-        ) : (
-          <>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(201,168,76,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>🏢</div>
-              <div>
-                <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>{org?.name || "..."}</h1>
-                <p style={{ fontSize: 12, color: "#22c55e", margin: 0 }}>✅ {ar ? "مرحباً للشركات مفعّلة" : "Marhaba for Business is active"}</p>
-              </div>
-            </div>
+export async function createEmployee(orgId: string, orgName: string, ownerId: string, f: EmployeeInput): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("identities")
+    .insert({ user_id: ownerId, name: f.name, active_mode: "business", is_active: true, organization_id: orgId })
+    .select("id")
+    .single();
+  if (error || !data) return null;
+  await Promise.allSettled([
+    supabase.from("emergency_data").insert({ identity_id: data.id, name: f.name }),
+    supabase.from("events_data").insert({ identity_id: data.id, name: f.name }),
+    supabase.from("offline_preferences").insert({ identity_id: data.id }),
+    supabase.from("business_data").insert({
+      identity_id: data.id, name: f.name, job_title: f.jobTitle || null,
+      company: orgName, phone: f.phone || null, email: f.email || null,
+    }),
+  ]);
+  return data.id;
+}
 
-            <div style={{ fontSize: 13, color: "var(--muted-foreground)", marginBottom: 10 }}>
-              {ar ? "المزايا قيد التجهيز وستظهر هنا تباعًا:" : "Features coming soon:"}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {upcoming.map((u) => (
-                <div key={u.title} className="card" style={{ display: "flex", gap: 12, alignItems: "center", opacity: 0.75 }}>
-                  <span style={{ fontSize: 26 }}>{u.icon}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 15 }}>{u.title}</div>
-                    <div style={{ fontSize: 12, color: "var(--muted-foreground)", marginTop: 2, lineHeight: 1.6 }}>{u.desc}</div>
-                  </div>
-                  <span style={{ fontSize: 11, opacity: 0.6 }}>{ar ? "قريبًا" : "Soon"}</span>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
+export async function updateEmployee(id: string, f: EmployeeInput): Promise<boolean> {
+  const ts = new Date().toISOString();
+  const [a, b] = await Promise.all([
+    supabase.from("identities").update({ name: f.name, updated_at: ts }).eq("id", id),
+    supabase.from("business_data").update({
+      name: f.name, job_title: f.jobTitle || null, phone: f.phone || null, email: f.email || null, updated_at: ts,
+    }).eq("identity_id", id),
+  ]);
+  return !a.error && !b.error;
+}
+
+export async function deleteEmployee(id: string): Promise<void> {
+  await supabase.from("identities").delete().eq("id", id);
+}
+
+export async function transferCard(serial: string, toIdentityId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc("transfer_card", { p_serial: serial, p_to_identity: toIdentityId });
+  return !error && data === true;
 }
