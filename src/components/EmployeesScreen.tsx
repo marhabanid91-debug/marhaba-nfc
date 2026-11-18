@@ -42,7 +42,7 @@ export default function EmployeesScreen({ org, onBack }: { org: Org; onBack: () 
     const m = mode as { k: "edit"; id: string | null };
     const ok = m.id
       ? await updateEmployee(m.id, form)
-      : !!(await createEmployee(org.id, org.name, supabaseUser.id, form));
+      : !!(await createEmployee(org, supabaseUser.id, form));
     setBusy(false);
     if (!ok) return flash("تعذّر الحفظ، تأكدي من تشغيل ملف company-b.sql");
     await reload();
@@ -104,8 +104,8 @@ export default function EmployeesScreen({ org, onBack }: { org: Org; onBack: () 
         {toast}
         <input style={inputStyle} placeholder="الاسم *" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         <input style={inputStyle} placeholder="المسمى الوظيفي" value={form.jobTitle} onChange={(e) => setForm({ ...form, jobTitle: e.target.value })} />
-        <input style={{ ...inputStyle, direction: "ltr" }} inputMode="tel" placeholder="الجوال 05xxxxxxxx" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-        <input style={{ ...inputStyle, direction: "ltr" }} inputMode="email" placeholder="البريد الإلكتروني" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+        <input style={{ ...inputStyle, direction: "ltr", textAlign: "right" }} inputMode="tel" placeholder="الجوال" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+        <input style={{ ...inputStyle, direction: "ltr", textAlign: "right" }} inputMode="email" placeholder="البريد الإلكتروني" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
         <button className="btn-primary" onClick={save} disabled={busy} style={{ marginTop: 8, opacity: busy ? 0.7 : 1 }}>{busy ? "..." : "حفظ"}</button>
       </div></div>
     );
