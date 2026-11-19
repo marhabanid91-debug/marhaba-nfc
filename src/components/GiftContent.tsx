@@ -6,7 +6,10 @@ const WA_NUMBER = "966500816798";
 
 // محتوى الهدية المشترك (وسائط، عروض وسحوبات بأزرار المشاركة والتواصل الفوري، متابعة، كتالوج)
 // يُستخدم في صفحة الهدية وفي صفحة الفعاليات. link = رابط الهدية الذي يُشارك
-export default function GiftContent({ gift, link, track = false }: { gift: GiftPublic; link: string; track?: boolean }) {
+// waTo: غير محدد = رقم مرحبا (صفحة الهدية)؛ نص = رقم المنظم (الفعاليات)؛ فارغ = يُخفى زر واتساب
+export default function GiftContent({ gift, link, track = false, waTo }: { gift: GiftPublic; link: string; track?: boolean; waTo?: string | null }) {
+  const organizer = waTo !== undefined;
+  const waNum = organizer ? (waTo || "") : WA_NUMBER;
   const [copied, setCopied] = useState<number | null>(null);
   const items = giftItems(gift).map((it) => ({ ...it, embed: toEmbed(it.url) })).filter((it) => it.embed.kind !== "none");
   const catalog = safeCatalogUrl(gift.gift_catalog);
@@ -21,8 +24,10 @@ export default function GiftContent({ gift, link, track = false }: { gift: GiftP
   };
 
   const waLink = (title?: string) =>
-    `https://wa.me/${WA_NUMBER}?text=` +
-    encodeURIComponent(`مرحباً مرحبا NFC 👋\nأرغب بالمشاركة في ${title || "السحب الأسبوعي"} 🎁\nرابط الهدية: ${link}`);
+    `https://wa.me/${waNum}?text=` +
+    encodeURIComponent(organizer
+      ? `السلام عليكم 👋\nأرغب بالمشاركة في ${title || "السحب"} 🎁\nرابط الفعالية: ${link}`
+      : `مرحباً مرحبا NFC 👋\nأرغب بالمشاركة في ${title || "السحب الأسبوعي"} 🎁\nرابط الهدية: ${link}`);
 
   const shareNow = async (title: string | undefined, idx: number) => {
     const text = `${title || gift.gift_title || "هدية من مرحبا NFC"} 🎁`;
@@ -102,6 +107,7 @@ export default function GiftContent({ gift, link, track = false }: { gift: GiftP
           >
             {copied === i ? "تم نسخ الرابط ✓" : "شارك الآن ↗"}
           </button>
+          {waNum && (
           <a
             href={waLink(o.title)}
             onClick={hit(`offer-wa:${i}`)}
@@ -115,6 +121,7 @@ export default function GiftContent({ gift, link, track = false }: { gift: GiftP
           >
             💬 تواصل فوري عبر واتساب
           </a>
+          )}
         </div>
       ))}
     </div>
