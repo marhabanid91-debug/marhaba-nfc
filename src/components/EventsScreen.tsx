@@ -4,13 +4,22 @@ import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext";
 import { EventStatus, SocialLinks, LocationItem } from "../types";
 import { LocationFields, cleanLocations } from "./LocationFields";
+import { SocialIcon } from "./SocialIcon";
 import { saveEventsData, uploadIdentityPhoto } from "../lib/db";
 
-const linkFields: { key: keyof SocialLinks; label: string; icon: string; placeholder: string }[] = [
-  { key: "marhaba",  label: "رابط مرحباً",     icon: "👋", placeholder: "https://marhabanid.com/…" },
-  { key: "linkedin", label: "لينكدإن",         icon: "💼", placeholder: "https://linkedin.com/in/…" },
-  { key: "works",    label: "معرض الأعمال",    icon: "🖼️", placeholder: "رابط معرض الأعمال: https://…" },
-  { key: "catalog",  label: "الكتالوج",        icon: "📖", placeholder: "رابط الكتالوج: https://…" },
+const socialPlatforms: { key: keyof SocialLinks; label: string; icon: string; prefix: string; placeholder: string }[] = [
+  { key: "googleReview", label: "تقييم قوقل", icon: "⭐", prefix: "https://", placeholder: "رابط تقييم قوقل: https://g.page/r/…/review" },
+  { key: "works", label: "معرض الأعمال", icon: "🖼️", prefix: "https://", placeholder: "رابط معرض الأعمال: https://…" },
+  { key: "catalog", label: "الكتالوج", icon: "📖", prefix: "https://", placeholder: "رابط الكتالوج: https://…" },
+  { key: "instagram", label: "Instagram", icon: "📸", prefix: "https://instagram.com/", placeholder: "https://instagram.com/username" },
+  { key: "tiktok",    label: "TikTok",    icon: "🎵", prefix: "https://tiktok.com/@",   placeholder: "https://tiktok.com/@username" },
+  { key: "facebook",  label: "Facebook",  icon: "👥", prefix: "https://facebook.com/",  placeholder: "https://facebook.com/username" },
+  { key: "snapchat",  label: "Snapchat",  icon: "👻", prefix: "https://snapchat.com/add/", placeholder: "https://snapchat.com/add/username" },
+  { key: "twitter",   label: "X (Twitter)", icon: "🐦", prefix: "https://x.com/",       placeholder: "https://x.com/username" },
+  { key: "youtube",   label: "YouTube",   icon: "▶️", prefix: "https://youtube.com/@",  placeholder: "https://youtube.com/@channel" },
+  { key: "linkedin",  label: "LinkedIn",  icon: "💼", prefix: "https://linkedin.com/in/", placeholder: "https://linkedin.com/in/username" },
+  { key: "whatsapp",  label: "WhatsApp",  icon: "💬", prefix: "https://wa.me/",         placeholder: "https://wa.me/966500000000" },
+  { key: "website",   label: "Website",   icon: "🌐", prefix: "https://",               placeholder: "https://yoursite.com" },
 ];
 
 function normaliseUrl(raw: string, prefix: string): string {
@@ -76,10 +85,10 @@ export default function EventsScreen() {
   const save = () => {
     // نُبقي البيانات الاجتماعية القديمة مخزّنة (لا تُعرض) حتى لا تضيع
     const normLinks: SocialLinks = { ...(data?.socialLinks || {}) };
-    for (const p of linkFields) {
+    for (const p of socialPlatforms) {
       delete (normLinks as any)[p.key];
       const raw = (socialLinks as any)[p.key] || "";
-      if (raw) (normLinks as any)[p.key] = normaliseUrl(raw, "https://");
+      if (raw) (normLinks as any)[p.key] = normaliseUrl(raw, p.prefix);
     }
     delete (normLinks as any).giftSerial;
     const cleanOffers = offers
@@ -220,15 +229,18 @@ export default function EventsScreen() {
           </div>
           <F label={lang === "ar" ? "برعاية" : "Sponsored by"} value={socialLinks.sponsorName || ""} onChange={(v) => setSocialLinks({ ...socialLinks, sponsorName: v })} placeholder={lang === "ar" ? "اسم الراعي (يظهر أعلى البطاقة)" : "Sponsor name"} optional />
 
-          {/* الروابط */}
+          {/* Social links */}
           <div>
             <label style={{ fontSize: 13, color: "var(--muted-foreground)", display: "block", marginBottom: 4 }}>
-              {lang === "ar" ? "الروابط" : "Links"} <span style={{ fontSize: 11, opacity: 0.6 }}>— {lang === "ar" ? "اختياري" : "Optional"}</span>
+              {t("socialLinks")} <span style={{ fontSize: 11, opacity: 0.6 }}>— {lang === "ar" ? "اختياري" : "Optional"}</span>
             </label>
+            <p style={{ fontSize: 12, color: "var(--muted-foreground)", marginBottom: 10 }}>
+              {lang === "ar" ? "أدخل الرابط كاملاً أو اسم المستخدم فقط" : "Enter the full URL or just the username"}
+            </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {linkFields.map((p) => (
+              {socialPlatforms.map((p) => (
                 <div key={p.key} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ width: 28, textAlign: "center", fontSize: 18, flexShrink: 0 }}>{p.icon}</span>
+                  <span style={{ width: 28, textAlign: "center", fontSize: 18, flexShrink: 0, display: "inline-flex", justifyContent: "center" }}>{p.key === "googleReview" || p.key === "catalog" || p.key === "works" ? p.icon : <SocialIcon k={p.key} size={26} />}</span>
                   <input
                     type="url"
                     inputMode="url"
@@ -236,9 +248,9 @@ export default function EventsScreen() {
                     onChange={(e) => setSocialLinks({ ...socialLinks, [p.key]: e.target.value })}
                     onBlur={(e) => {
                       const v = e.target.value.trim();
-                      if (v) setSocialLinks((prev) => ({ ...prev, [p.key]: normaliseUrl(v, "https://") }));
+                      if (v) setSocialLinks((prev) => ({ ...prev, [p.key]: normaliseUrl(v, p.prefix) }));
                     }}
-                    placeholder={`${p.label}: ${p.placeholder}`}
+                    placeholder={p.placeholder}
                     style={{ flex: 1, direction: "ltr" }}
                   />
                 </div>
@@ -252,7 +264,7 @@ export default function EventsScreen() {
               🎉 {lang === "ar" ? "العروض والسحوبات" : "Offers & draws"} <span style={{ fontSize: 11, opacity: 0.6 }}>— {lang === "ar" ? "اختياري" : "Optional"}</span>
             </label>
             <p style={{ fontSize: 12, color: "var(--muted-foreground)", marginBottom: 8, lineHeight: 1.7 }}>
-              {lang === "ar" ? "تُنشئينها هنا وتظهر بنفس رابط البطاقة، لكل عرض زر «شارك الآن» وزر «تواصل فوري عبر واتساب»." : "Created here and shown on the same card link."}
+              {lang === "ar" ? "تنشئها هنا وتظهر بنفس رابط البطاقة، لكل عرض زر «شارك الآن» وزر «تواصل فوري عبر واتساب»." : "Created here and shown on the same card link."}
             </p>
             {offers.map((o, i) => (
               <div key={i} style={{ border: "1px dashed var(--border-strong)", borderRadius: 10, padding: 10, marginBottom: 8 }}>
