@@ -188,7 +188,7 @@ function currentCardUrl(identity?: any): string {
 }
 
 // زر «احفظ بطاقتي»: يفتح قائمة المشاركة ليحفظ القارئ الرابط (ملاحظاته، واتساب لنفسه، المفضلة…)، وإلا ينسخ الرابط
-function SaveCardBtn({ url, name, lang }: { url: string; name?: string; lang: string }) {
+function SaveCardBtn({ url, name, lang, compact = false }: { url: string; name?: string; lang: string; compact?: boolean }) {
   const [done, setDone] = useState<"" | "shared" | "copied">("");
   const ar = lang === "ar";
   const act = async () => {
@@ -211,6 +211,18 @@ function SaveCardBtn({ url, name, lang }: { url: string; name?: string; lang: st
       window.prompt(ar ? "انسخ الرابط واحفظه" : "Copy and keep this link", url);
     }
   };
+  if (compact) {
+    return (
+      <div style={{ marginTop: 14, textAlign: "center" }}>
+        <button onClick={act} data-stat="savecard" style={{
+          background: "none", border: "none", color: "var(--muted-foreground)", fontSize: 12, textDecoration: "underline",
+          cursor: "pointer", fontFamily: "inherit", padding: 6,
+        }}>
+          {done === "copied" ? (ar ? "✓ تم نسخ رابط البطاقة" : "✓ Card link copied") : (ar ? "🔖 احفظ البطاقة للمتابعة لاحقاً" : "🔖 Save this card for later")}
+        </button>
+      </div>
+    );
+  }
   return (
     <div style={{ marginTop: 12 }}>
       <button
@@ -706,6 +718,7 @@ function BusinessReader({ identity, color }: { identity: any; color: string }) {
 function EventsReader({ identity, color }: { identity: any; color: string }) {
   const { lang } = useApp();
   const d = identity?.events;
+  const hasOffers = (((d?.socialLinks as any)?.promo?.offers || []) as any[]).length > 0;
   const noData = lang === "ar" ? "لا توجد بيانات حالياً" : "No data available";
 
   const statusLabels: Record<string, { ar: string; en: string }> = {
@@ -762,12 +775,12 @@ function EventsReader({ identity, color }: { identity: any; color: string }) {
         <div style={{ textAlign: "center", padding: 24, color: "var(--muted-foreground)" }}>{noData}</div>
       )}
 
-      <EventLinks d={d} color={color} lang={lang} cardUrl={currentCardUrl(identity)} />
+      <EventLinks d={d} color={color} lang={lang} cardUrl={currentCardUrl(identity)} organizerPhone={identity?.business?.phone} />
 
       <LocationCard locations={d?.locations} />
 
       {/* تواصل معي: يستخدم رقم بطاقة الأعمال لنفس الهوية */}
-      {identity?.business?.phone && <ContactMeBtn ownerPhone={identity.business.phone} ownerName={d?.name ? truncateName(d.name) : undefined} lang={lang} customMessage={identity.business.contactMessage} />}
+      {identity?.business?.phone && !hasOffers && <ContactMeBtn ownerPhone={identity.business.phone} ownerName={d?.name ? truncateName(d.name) : undefined} lang={lang} customMessage={identity.business.contactMessage} />}
 
       {/* Save Contact */}
       {d?.name && (
@@ -783,7 +796,7 @@ function EventsReader({ identity, color }: { identity: any; color: string }) {
       )}
 
       {/* احفظ البطاقة */}
-      {d?.name && <SaveCardBtn url={currentCardUrl(identity)} name={truncateName(d.name)} lang={lang} />}
+      {d?.name && <SaveCardBtn url={currentCardUrl(identity)} name={truncateName(d.name)} lang={lang} compact />}
     </div>
   );
 }
@@ -823,22 +836,21 @@ function ContactRow({ icon, value, href }: { icon: string; value: string; href?:
 }
 
 const EVENT_LINKS: { key: string; icon: string; ar: string; en: string }[] = [
-  { key: "marhaba",  icon: "👋", ar: "رابط مرحباً",    en: "Marhaba link" },
-  { key: "linkedin", icon: "💼", ar: "لينكدإن",        en: "LinkedIn" },
-  { key: "works",    icon: "🖼️", ar: "معرض الأعمال",   en: "Portfolio" },
-  { key: "catalog",  icon: "📖", ar: "تصفّح الكتالوج", en: "Browse catalog" },
+  { key: "works",   icon: "🖼️", ar: "معرض الأعمال",   en: "Portfolio" },
+  { key: "catalog", icon: "📖", ar: "تصفّح الكتالوج", en: "Browse catalog" },
 ];
+const SOCIAL_KEYS = ["instagram", "tiktok", "facebook", "snapchat", "twitter", "youtube", "linkedin", "whatsapp", "website"];
 
-function EventLinks({ d, color, lang, cardUrl }: { d: any; color: string; lang: string; cardUrl: string }) {
-  const sl = (d?.socialLinks || {}) as Record<string, string>;
+function EventLinks({ d, color, lang, cardUrl, organizerPhone }: { d: any; color: string; lang: string; cardUrl: string; organizerPhone?: string }) {
+  const sl = (d?.socialLinks || {}) as Record<string, any>;
   const [copied, setCopied] = useState(false);
-  const offers = ((d?.socialLinks as any)?.promo?.offers || []) as { title: string; how?: string }[];
+  const offers = (sl?.promo?.offers || []) as { title: string; how?: string }[];
   const gift: GiftPublic | null = offers.length
     ? { serial: "", status: "linked", gift_title: null, gift_url: null, gift_catalog: null, gift_items: null, gift_promo: { offers } }
     : null;
-  const hasContent = !!gift;
   const ar = lang === "ar";
   const title = d?.eventName || d?.name || "";
+  const ok = (k: string) => typeof sl[k] === "string" && /^https:\/\//i.test(sl[k]);
 
   const shareEvent = async () => {
     const text = ar ? `ندعوك لحضور ${title} 🎪` : `Join us at ${title} 🎪`;
@@ -867,22 +879,47 @@ function EventLinks({ d, color, lang, cardUrl }: { d: any; color: string; lang: 
     fontWeight: 800, fontSize: 15, textDecoration: "none", cursor: "pointer", fontFamily: "inherit",
   });
 
+  const socials = SOCIAL_KEYS.filter(ok);
+
   return (
     <>
-      {/* السحوبات والعروض أولاً: أقوى ما يجذب الزائر */}
-      {hasContent && gift && (
+      {/* 1) السحوبات والعروض: المشاركة والتواصل مع المنظم داخل كل عرض */}
+      {gift && (
         <div className="card" style={{ marginTop: 12, textAlign: "center" }}>
-          <GiftContent gift={gift} link={cardUrl} />
+          <GiftContent gift={gift} link={cardUrl} waTo={waNumber(organizerPhone || "")} />
         </div>
       )}
 
-      {EVENT_LINKS.filter((l) => typeof sl[l.key] === "string" && /^https:\/\//i.test(sl[l.key])).map((l) => (
-        <a key={l.key} href={sl[l.key]} target="_blank" rel="noopener noreferrer"
-           style={btn(`${color}18`, color, `1.5px solid ${color}55`)}>
-          <span style={{ fontSize: 18 }}>{l.icon}</span>
-          {ar ? l.ar : l.en}
+      {/* 2) الروابط */}
+      {EVENT_LINKS.filter((l) => ok(l.key)).map((l) => (
+        <a key={l.key} href={sl[l.key]} target="_blank" rel="noopener noreferrer" style={btn(`${color}18`, color, `1.5px solid ${color}55`)}>
+          <span style={{ fontSize: 18 }}>{l.icon}</span>{ar ? l.ar : l.en}
         </a>
       ))}
+
+      {ok("googleReview") && (
+        <a href={sl.googleReview} target="_blank" rel="noopener noreferrer" style={btn("#fff", "#202124", "1px solid #dadce0")}>
+          <span style={{ fontSize: 18 }}>⭐</span>{ar ? "قيّمنا على قوقل" : "Rate us on Google"}
+        </a>
+      )}
+
+      {socials.length > 0 && (
+        <div className="card" style={{ marginTop: 12 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {socials.map((k) => (
+              <a key={k} href={sl[k]} target="_blank" rel="noopener noreferrer" style={{
+                display: "inline-flex", alignItems: "center", gap: 8,
+                padding: "6px 14px 6px 8px", borderRadius: 20, fontSize: 12,
+                background: `${color}12`, border: `1px solid ${color}30`, color,
+                textDecoration: "none", fontWeight: 600,
+              }}>
+                <SocialIcon k={k} />
+                {socialName(k)}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {calUrl && (
         <a href={calUrl} target="_blank" rel="noopener noreferrer" style={btn(`${color}18`, color, `1.5px solid ${color}55`)}>
@@ -890,10 +927,13 @@ function EventLinks({ d, color, lang, cardUrl }: { d: any; color: string; lang: 
         </a>
       )}
 
-      <button type="button" onClick={shareEvent} style={btn(color, "#000", "0")}>
-        <span style={{ fontSize: 18 }}>↗</span>
-        {copied ? (ar ? "تم نسخ الرابط ✓" : "Link copied ✓") : (ar ? "شارك الفعالية مع صديق" : "Share event with a friend")}
-      </button>
+      {/* مشاركة الفعالية: تظهر فقط إن لم توجد عروض (زر «شارك الآن» في العرض يغني عنها) */}
+      {!gift && (
+        <button type="button" onClick={shareEvent} style={btn(color, "#000", "0")}>
+          <span style={{ fontSize: 18 }}>↗</span>
+          {copied ? (ar ? "تم نسخ الرابط ✓" : "Link copied ✓") : (ar ? "شارك الفعالية مع صديق" : "Share event with a friend")}
+        </button>
+      )}
     </>
   );
 }
