@@ -40,7 +40,6 @@ export interface EmergencyVisibility {
 export interface SocialLinks {
   googleReview?: string;
   catalog?: string;
-  marhaba?: string;
   works?: string;
   promo?: { offers?: { title: string; how?: string }[] };
   eventDate?: string;
