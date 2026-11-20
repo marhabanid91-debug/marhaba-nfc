@@ -436,9 +436,9 @@ export async function upsertProfile(userId: string, fields: {
 export async function loadProfile(userId: string): Promise<{ avatar_url: string | null; is_admin: boolean }> {
   const { data } = await supabase
     .from("profiles")
-    .select("avatar_url, is_admin")
+    .select("*")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
   return {
     avatar_url: (data as any)?.avatar_url ?? null,
     is_admin: (data as any)?.is_admin === true,
