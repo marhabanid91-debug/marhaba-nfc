@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useApp } from "../context/AppContext";
 import { useCompany } from "../hooks/useCompany";
 import AdminPanel from "./AdminPanel";
 import { useOverlayBack } from "../lib/overlayBack";
+import { supabase } from "../lib/supabase";
+import { loadProfile } from "../lib/db";
 
 const WA_NUMBER = "966500816798";
 const SITE = "https://welcome.marhabanid.com";
@@ -26,7 +28,20 @@ const SERVICES: { icon: string; title: string; desc: string; msg: string }[] = [
 
 // قائمة الثلاث خطوط في الصفحة الرئيسية: تعليمات، الإكسسوار، الإعدادات، الدعم…
 export default function HomeMenu({ onClose }: { onClose: () => void }) {
-  const { lang, setScreen, isAdmin } = useApp();
+  const { lang, setScreen, isAdmin: ctxAdmin } = useApp();
+  // تحقق مباشر من صلاحية المدير حتى لو لم تُحمَّل في السياق
+  const [dbAdmin, setDbAdmin] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    supabase.auth.getSession().then(async ({ data }) => {
+      const uid = data.session?.user?.id;
+      if (!uid) return;
+      const p = await loadProfile(uid).catch(() => null);
+      if (alive && p?.is_admin) setDbAdmin(true);
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  const isAdmin = ctxAdmin || dbAdmin;
   const { org } = useCompany();
   const ar = lang === "ar";
   const [view, setView] = useState<View>("menu");
