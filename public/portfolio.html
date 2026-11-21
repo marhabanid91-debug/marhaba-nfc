@@ -1,0 +1,22 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>معرض منتجات مرحبا NFC</title><meta property="og:title" content="معرض منتجات مرحبا NFC"><meta property="og:description" content="بطاقات وإكسسوارات ذكية تجمع هويتك بلمسة واحدة">
+<style>:root{--g:#c9a84c}*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:#000;color:#f4ecd8;font-family:system-ui,"Segoe UI",Tahoma,sans-serif;overflow:hidden}
+#w{height:100dvh;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;direction:rtl;scrollbar-width:none;-webkit-overflow-scrolling:touch}#w::-webkit-scrollbar{display:none}
+.s{flex:0 0 100%;height:100%;scroll-snap-align:center;display:flex;align-items:center;justify-content:center;padding:0 0 64px}
+.s img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+#bar{position:fixed;left:0;right:0;bottom:0;height:64px;padding:0 12px env(safe-area-inset-bottom);display:flex;align-items:center;justify-content:space-between;gap:8px;background:linear-gradient(transparent,#000 40%)}
+#bar a{font:inherit;font-size:14px;font-weight:700;color:#000;background:var(--g);border-radius:22px;padding:10px 16px;text-decoration:none}
+#bar .wa{background:#25D366;color:#fff}#n{color:var(--g);font-size:14px;direction:ltr;min-width:48px;text-align:center}
+.arr{position:fixed;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:1px solid var(--g);background:rgba(0,0,0,.55);color:var(--g);font-size:22px;display:none;align-items:center;justify-content:center;cursor:pointer}
+@media(hover:hover) and (min-width:700px){.arr{display:flex}}#p{right:14px}#x{left:14px}</style></head><body>
+<div id="w"><section class="s"><img alt="1" src="p1.jpg"></section><section class="s"><img alt="2" src="p2.jpg"></section><section class="s"><img alt="3" src="p3.jpg"></section><section class="s"><img alt="4" src="p4.jpg"></section><section class="s"><img alt="5" src="p5.jpg"></section><section class="s"><img alt="6" src="p6.jpg"></section><section class="s"><img alt="7" src="p7.jpg"></section><section class="s"><img alt="8" src="p8.jpg"></section><section class="s"><img alt="9" src="p9.jpg"></section></div>
+<button class="arr" id="p">›</button><button class="arr" id="x">‹</button>
+<div id="bar"><span id="n">1 / 9</span><a class="wa" href="https://wa.me/966500816798?text=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%D9%8B%D8%8C%20%D8%B4%D9%81%D8%AA%20%D9%85%D8%B9%D8%B1%D8%B6%20%D9%85%D9%86%D8%AA%D8%AC%D8%A7%D8%AA%D9%83%D9%85%20%D9%88%D8%A3%D8%B1%D8%BA%D8%A8%20%D8%A8%D8%A7%D9%84%D8%B7%D9%84%D8%A8" target="_blank" rel="noopener">اطلب عبر واتساب</a></div>
+<script>
+var w=document.getElementById('w'),n=document.getElementById('n'),T=9;
+function cur(){return Math.round(Math.abs(w.scrollLeft)/w.clientWidth)}
+function go(i){i=Math.max(0,Math.min(T-1,i));w.scrollTo({left:-i*w.clientWidth,behavior:'smooth'})}
+w.addEventListener('scroll',function(){n.textContent=(cur()+1)+' / '+T},{passive:true});
+document.getElementById('p').onclick=function(){go(cur()-1)};document.getElementById('x').onclick=function(){go(cur()+1)};
+document.addEventListener('keydown',function(e){if(e.key==='ArrowLeft')go(cur()+1);if(e.key==='ArrowRight')go(cur()-1)});
+</script></body></html>
