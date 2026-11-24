@@ -9,11 +9,12 @@ const WA_NUMBER = "966500816798";
 // waTo: غير محدد = رقم مرحبا (صفحة الهدية)؛ نص = رقم المنظم (الفعاليات)؛ فارغ = يُخفى زر واتساب
 export default function GiftContent({ gift, link, track = false, waTo }: { gift: GiftPublic; link: string; track?: boolean; waTo?: string | null }) {
   const organizer = waTo !== undefined;
-  const waNum = organizer ? (waTo || "") : WA_NUMBER;
+  const promo = cleanPromo(gift.gift_promo);
+  // صفحة الهدية: رقم منشئ الهدية إن وُجد، وإلا رقم مرحبا؛ الفعاليات: رقم المنظم
+  const waNum = organizer ? (waTo || "") : (promo.wa || WA_NUMBER);
   const [copied, setCopied] = useState<number | null>(null);
   const items = giftItems(gift).map((it) => ({ ...it, embed: toEmbed(it.url) })).filter((it) => it.embed.kind !== "none");
   const catalog = safeCatalogUrl(gift.gift_catalog);
-  const promo = cleanPromo(gift.gift_promo);
   const statSerial = gift.serial || null;
 
   useEffect(() => {
@@ -25,8 +26,8 @@ export default function GiftContent({ gift, link, track = false, waTo }: { gift:
 
   const waLink = (title?: string) =>
     `https://wa.me/${waNum}?text=` +
-    encodeURIComponent(organizer
-      ? `السلام عليكم 👋\nأرغب بالمشاركة في ${title || "السحب"} 🎁\nرابط الفعالية: ${link}`
+    encodeURIComponent(organizer || promo.wa
+      ? `السلام عليكم 👋\nأرغب بالمشاركة في ${title || "السحب"} 🎁\nرابط ${organizer ? "الفعالية" : "الهدية"}: ${link}`
       : `مرحباً مرحبا NFC 👋\nأرغب بالمشاركة في ${title || "السحب الأسبوعي"} 🎁\nرابط الهدية: ${link}`);
 
   const shareNow = async (title: string | undefined, idx: number) => {
