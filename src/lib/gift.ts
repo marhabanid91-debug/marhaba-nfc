@@ -171,7 +171,10 @@ export async function getGiftBySerial(rawSerial: string): Promise<GiftPublic | n
 
 /** تفعيل بطاقة هدية على حساب المستخدم الحالي. */
 export async function claimGift(rawSerial: string): Promise<boolean> {
-  const { data, error } = await supabase.rpc("claim_gift", { p_serial: rawSerial.trim() });
+  const serial = rawSerial.trim();
+  // رمز التفعيل = آخر 6 خانات من السيريال
+  const code = serial.replace(/[^A-Za-z0-9]/g, "").slice(-6).toUpperCase();
+  const { data, error } = await supabase.rpc("claim_gift", { p_serial: serial, p_code: code });
   return !error && data === true;
 }
 
