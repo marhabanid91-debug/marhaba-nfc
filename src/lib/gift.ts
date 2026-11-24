@@ -105,10 +105,20 @@ export interface GiftOffer {
 export interface GiftPromo {
   follow?: GiftFollow | null;
   offers?: GiftOffer[] | null;
+  /** واتساب منشئ الهدية (بصيغة دولية، أرقام فقط) */
+  wa?: string | null;
 }
 
 /** تنظيف الإضافات للعرض: روابط https فقط، وحذف العناصر الفارغة */
-export function cleanPromo(p: GiftPromo | null | undefined): { follow: { url: string; title: string } | null; offers: GiftOffer[] } {
+/** رقم واتساب بصيغة دولية: أرقام فقط، و05xxxxxxxx تتحول إلى 9665xxxxxxxx؛ فارغ إن لم يصلح */
+export function cleanWa(raw: string | null | undefined): string {
+  let n = String(raw || "").replace(/[^0-9]/g, "");
+  if (n.startsWith("00")) n = n.slice(2);
+  if (n.length === 10 && n.startsWith("0")) n = "966" + n.slice(1);
+  return n.length >= 9 && n.length <= 15 ? n : "";
+}
+
+export function cleanPromo(p: GiftPromo | null | undefined): { follow: { url: string; title: string } | null; offers: GiftOffer[]; wa: string } {
   const furl = safeCatalogUrl(p?.follow?.url);
   const follow = furl ? { url: furl, title: (p?.follow?.title || "").trim() } : null;
   const offers = (Array.isArray(p?.offers) ? p!.offers! : [])
@@ -118,7 +128,7 @@ export function cleanPromo(p: GiftPromo | null | undefined): { follow: { url: st
       url: safeCatalogUrl(o?.url) || "",
     }))
     .filter((o) => o.title || o.how || o.url);
-  return { follow, offers };
+  return { follow, offers, wa: cleanWa(p?.wa) };
 }
 
 export interface GiftPublic {
