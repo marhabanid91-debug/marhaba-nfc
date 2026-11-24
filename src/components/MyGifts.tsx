@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import StatsBox from "./StatsBox";
 import { copyText, shareLink } from "../lib/share";
-import { claimGift, loadMyGifts, setGiftLink, setGiftPromo, toEmbed, isTikTokUnsupported, giftItems, cleanPromo, GiftItem, GiftOffer, MyGift } from "../lib/gift";
+import { cleanWa, claimGift, loadMyGifts, setGiftLink, setGiftPromo, toEmbed, isTikTokUnsupported, giftItems, cleanPromo, GiftItem, GiftOffer, MyGift } from "../lib/gift";
 
 // قسم «أعمال وهدايا» داخل حساب المُهدي: تفعيل بطاقة هدية وتبديل رابطها
 export default function MyGifts({ hideTitle = false, onCount }: { hideTitle?: boolean; onCount?: (n: number) => void } = {}) {
@@ -98,7 +98,8 @@ function GiftRow({
   const [followUrl, setFollowUrl] = useState(initPromo.follow?.url || "");
   const [followTitle, setFollowTitle] = useState(initPromo.follow?.title || "");
   const [offers, setOffers] = useState<GiftOffer[]>(initPromo.offers);
-  const hadPromo = !!(initPromo.follow || initPromo.offers.length);
+  const [waInput, setWaInput] = useState(initPromo.wa || "");
+  const hadPromo = !!(initPromo.follow || initPromo.offers.length || initPromo.wa);
   // بطاقة مصغّرة بعد الحفظ؛ تُفتح عند الضغط. الهدية الجديدة الفارغة تبدأ مفتوحة
   const hasContent = !!(g.gift_title || giftItems(g).length || g.gift_catalog || hadPromo);
   const [open, setOpen] = useState(!hasContent);
@@ -156,8 +157,9 @@ function GiftRow({
     const promo = {
       follow: followUrl.trim() ? { url: followUrl.trim(), title: followTitle.trim() } : null,
       offers: cleanOffers,
+      wa: cleanWa(waInput) || null,
     };
-    if (promo.follow || promo.offers.length || hadPromo) {
+    if (promo.follow || promo.offers.length || promo.wa || hadPromo) {
       const ok2 = await setGiftPromo(g.serial, promo);
       if (!ok2) {
         setMsg("تم حفظ الهدية، لكن تعذّر حفظ المتابعة والعروض (تأكدي من تشغيل ملف gift-promo.sql)");
@@ -274,6 +276,20 @@ function GiftRow({
           placeholder="اسمك أو اسم الفعالية (مثال: معرض تجار)"
           maxLength={80}
           style={inputStyle}
+        />
+      </div>
+
+      <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
+        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>💬 واتساب التواصل (اختياري)</div>
+        <div style={{ fontSize: 12, color: "var(--muted-foreground)", marginBottom: 8, lineHeight: 1.7 }}>
+          رقمك أو رقم صاحب البراند. زر «تواصل فوري عبر واتساب» في العروض يفتح محادثة معه مباشرة.
+        </div>
+        <input
+          value={waInput}
+          onChange={(e) => setWaInput(e.target.value)}
+          inputMode="tel"
+          placeholder="05xxxxxxxx أو 9665xxxxxxxx"
+          style={{ ...inputStyle, direction: "ltr", textAlign: "right" }}
         />
       </div>
 
