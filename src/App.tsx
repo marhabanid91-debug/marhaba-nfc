@@ -16,6 +16,7 @@ import SerialGateScreen from "./components/SerialGateScreen";
 import GiftView from "./components/GiftView";
 import IdentityDetailScreen from "./components/IdentityDetailScreen";
 import CompanyScreen from "./components/CompanyScreen";
+import ChooseServiceScreen from "./components/ChooseServiceScreen";
 import InstallPrompt from "./components/InstallPrompt";
 import { useEffect, useRef } from "react";
 import marhabaLogo from "./imports/marhaba-logo.png";
@@ -53,7 +54,7 @@ function AppShell() {
     if (entered.current) return;
     entered.current = true;
     setActiveIdentityId(creatingId);
-    setScreen("emergency");
+    setScreen("create-choose");
   }, [initializing, dbLoading, creatingId, identities]);
 
   // شاشات التعديل تحتاج هوية محددة
@@ -82,6 +83,8 @@ function AppShell() {
       {screen === "accessory" && <AccessoryScreen />}
       {screen === "settings" && <SettingsScreen />}
       {screen === "company" && <CompanyScreen />}
+      {screen === "create-choose" && <ChooseServiceScreen />}
+      {screen === "create-more" && <ChooseServiceScreen more />}
       {screen === "offline-settings" && <OfflineSettingsScreen />}
       {screen === "privacy-policy" && <PrivacyPolicyScreen />}
       {screen === "reader-emergency" && <ReaderView mode="emergency" />}
