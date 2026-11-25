@@ -241,8 +241,8 @@ export default function BusinessScreen() {
         )}
 
         <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 10, paddingBottom: 20 }}>
-          <button className="btn-primary" onClick={() => { save(); after("events"); }}>{creating ? t("saveAndContinue") : (lang === "ar" ? "حفظ ورجوع" : "Save & back")}</button>
-          {creating && <button className="btn-ghost" onClick={() => setScreen("events")}>{t("skipNow")}</button>}
+          <button className="btn-primary" onClick={() => { save(); after("done", "business"); }}>{creating ? t("saveAndContinue") : (lang === "ar" ? "حفظ ورجوع" : "Save & back")}</button>
+          {creating && <button className="btn-ghost" onClick={() => after("done", "business")}>{t("skipNow")}</button>}
         </div>
       </div>
     </div>
