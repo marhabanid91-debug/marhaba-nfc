@@ -3,10 +3,11 @@ import { useApp } from "../context/AppContext";
 import { checkSerialAvailability, activateCard, unlinkSerial } from "../lib/db";
 import { supabase } from "../lib/supabase";
 import MyGifts from "./MyGifts";
+import { SERVICES, serviceLink } from "../lib/services";
 
 const SERIAL_PREFIX = "MARHABA-";
 
-type Section = "link" | "gifts" | null;
+type Section = "link" | "gifts" | "services" | null;
 
 // بطاقة قابلة للفتح: عنوان + ملخص بسطر واحد، ويظهر المحتوى عند الفتح
 function Accordion({
@@ -247,6 +248,29 @@ export default function AccessoryScreen() {
             <MyGifts hideTitle onCount={setGiftCount} />
           </Accordion>
         )}
+
+        {/* خدمات رقمية أخرى */}
+        <Accordion
+          icon="🧩"
+          title={ar ? "خدمات رقمية أخرى" : "Other digital services"}
+          summary={ar ? "اضغط على الخدمة لتفتح محادثة واتساب للاستفسار" : "Ask us on WhatsApp"}
+          open={open === "services"}
+          onToggle={() => toggle("services")}
+        >
+          {SERVICES.map((sv) => (
+            <button key={sv.title} onClick={() => window.open(serviceLink(sv.msg), "_blank", "noopener")} style={{
+              display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "12px 4px", background: "none",
+              border: "none", borderBottom: "1px solid var(--border)", color: "var(--foreground)", fontFamily: "inherit",
+              fontSize: 15, cursor: "pointer", textAlign: "start",
+            }}>
+              <span style={{ fontSize: 22, width: 30, textAlign: "center" }}>{sv.icon}</span>
+              <span style={{ flex: 1 }}>
+                <span style={{ display: "block", fontWeight: 700 }}>{sv.title}</span>
+                <span style={{ display: "block", fontSize: 12, color: "var(--muted-foreground)", marginTop: 1 }}>{sv.desc}</span>
+              </span>
+            </button>
+          ))}
+        </Accordion>
       </div>
     </div>
   );
