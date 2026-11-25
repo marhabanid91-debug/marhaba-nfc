@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import StatsBox from "./StatsBox";
 import { copyText, shareLink } from "../lib/share";
+import { loadStats } from "../lib/stats";
 import { COUNTRIES, splitPhone, joinPhone } from "../lib/countries";
 import { cleanWa, claimGift, loadMyGifts, setGiftLink, setGiftPromo, toEmbed, isTikTokUnsupported, giftItems, cleanPromo, GiftItem, GiftOffer, MyGift } from "../lib/gift";
 
@@ -119,6 +120,35 @@ function GiftRow({
     if (r === "failed") flash("تعذّرت المشاركة");
   };
 
+  const shareStats = async () => {
+    flash("جارٍ تجهيز الإحصائيات…");
+    const st = await loadStats("gift", g.serial);
+    if (!st) { flash("لا توجد إحصائيات بعد"); return; }
+    const names: Record<string, string> = {
+      contact: "💬 تواصل واتساب", follow: "💛 متابعة", catalog: "📖 الكتالوج", link: "🔗 روابط أخرى", save: "👤 حفظ جهة الاتصال",
+      "social:instagram": "📸 انستقرام", "social:tiktok": "🎵 تيك توك", "social:snapchat": "👻 سناب", "social:x": "🐦 X", "social:youtube": "▶️ يوتيوب",
+    };
+    initPromo.offers.forEach((o, i) => { names[`offer:${i}`] = `🎉 ${o.title || `عرض ${i + 1}`}`; });
+    const week = (st.days || []).reduce((a, d) => a + d.n, 0);
+    const clicks = Object.entries(st.clicks || {}).filter(([, n]) => n > 0).sort((a, b) => b[1] - a[1]);
+    const lines = [
+      `📊 تقرير تجربة مرحباً NFC`,
+      `البراند: ${cardName}`,
+      ``,
+      `👁 عدد مرات الفتح: ${st.opens}`,
+      `📱 عدد الأجهزة المختلفة: ${st.devices}`,
+      `📅 آخر ٧ أيام: ${week}`,
+      ...(clicks.length ? [``, `الضغطات:`, ...clicks.map(([k, n]) => `• ${names[k] || k.replace(/^social:/, "")}: ${n}`)] : []),
+      ``,
+      `marhabanid.com`,
+    ];
+    const text = lines.join("\n");
+    if (navigator.share) {
+      try { await navigator.share({ title: "تقرير تجربة مرحباً NFC", text }); flash(""); return; } catch (e: any) { if (e?.name === "AbortError") { flash(""); return; } }
+    }
+    flash((await copyText(text)) ? "تم نسخ التقرير ✅" : "تعذّرت المشاركة");
+  };
+
   const setOffer = (i: number, patch: Partial<GiftOffer>) =>
     setOffers((prev) => prev.map((o, k) => (k === i ? { ...o, ...patch } : o)));
 
@@ -214,6 +244,9 @@ function GiftRow({
         <button type="button" onClick={copyGift} style={quickBtn}>🔗 نسخ الرابط</button>
         <button type="button" onClick={shareGift} style={quickBtn}>↗ مشاركة الرابط</button>
       </div>
+      <div style={{ padding: "0 14px 12px" }}>
+        <button type="button" onClick={shareStats} style={{ ...quickBtn, width: "100%" }}>📊 مشاركة الإحصائيات</button>
+      </div>
       {linkMsg && <p style={{ fontSize: 12.5, color: "#22c55e", margin: 0, padding: "0 14px 10px" }}>{linkMsg}</p>}
       {!open && msg && <p style={{ fontSize: 12.5, color: "#22c55e", margin: 0, padding: "0 14px 10px" }}>{msg}</p>}
 
@@ -293,10 +326,10 @@ function GiftRow({
             value={waCc}
             onChange={(e) => setWaCc(e.target.value)}
             aria-label="مفتاح الدولة"
-            style={{ ...inputStyle, width: "42%", flex: "none", direction: "rtl" }}
+            style={{ ...inputStyle, width: "46%", flex: "none", direction: "rtl", paddingInline: 8, fontSize: 14 }}
           >
             {COUNTRIES.map((c) => (
-              <option key={c.name} value={c.code}>{c.name} (+{c.code})</option>
+              <option key={c.name} value={c.code}>{c.name} +{c.code}</option>
             ))}
           </select>
           <input
