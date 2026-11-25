@@ -1,4 +1,5 @@
 import { useApp } from "../context/AppContext";
+import { addDone, clearFlow, getDone, wasAsked } from "../lib/createFlow";
 
 type Step = "emergency" | "business" | "events";
 const steps: { key: Step; ar: string; en: string; icon: string }[] = [
@@ -11,10 +12,12 @@ const steps: { key: Step; ar: string; en: string; icon: string }[] = [
 export function useFlow() {
   const { creatingId, activeIdentityId, setCreatingId, setScreen } = useApp();
   const creating = !!creatingId && creatingId === activeIdentityId;
-  const finish = () => { setCreatingId(null); setScreen("home"); };
-  const after = (next: Step | "done") => {
+  const finish = () => { clearFlow(); setCreatingId(null); setScreen("home"); };
+  // بعد حفظ قسم أثناء الإنشاء: يُسأل المستخدم مرة واحدة عن قسم آخر، ثم ينتهي
+  const after = (_next?: Step | "done", current?: Step) => {
     if (!creating) { setScreen("identity-detail"); return; }
-    if (next === "done") finish(); else setScreen(next);
+    if (current) addDone(current);
+    if (!wasAsked() && getDone().length < 3) setScreen("create-more"); else finish();
   };
   return { creating, finish, after };
 }
@@ -40,31 +43,10 @@ export default function FlowHeader({ current }: { current: Step }) {
   }
 
   const idx = steps.findIndex((s) => s.key === current);
+  const only = steps[idx];
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
-      {steps.map((s, i) => {
-        const active = i === idx;
-        const done = i < idx;
-        return (
-          <div key={s.key} style={{ display: "flex", alignItems: "center", gap: 6, flex: 1 }}>
-            <button
-              onClick={() => setScreen(s.key)}
-              style={{
-                flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
-                padding: "8px 4px", borderRadius: 10, fontFamily: "inherit", fontSize: 12, cursor: "pointer",
-                fontWeight: active ? 700 : 500,
-                background: active ? "var(--primary)" : "var(--card)",
-                color: active ? "var(--primary-foreground, #fff)" : done ? "var(--primary)" : "var(--muted-foreground)",
-                border: `1px solid ${active || done ? "var(--primary)" : "var(--border-strong)"}`,
-              }}
-            >
-              <span>{done ? "✓" : i + 1}</span>
-              <span>{isAr ? s.ar : s.en}</span>
-            </button>
-            {i < steps.length - 1 && <span style={{ color: "var(--muted-foreground)", fontSize: 12 }}>{isAr ? "←" : "→"}</span>}
-          </div>
-        );
-      })}
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 14, padding: "8px 12px", borderRadius: 10, background: "var(--primary)", color: "var(--primary-foreground, #fff)", fontWeight: 700, fontSize: 14 }}>
+      <span>{only.icon}</span><span>{isAr ? only.ar : only.en}</span>
     </div>
   );
 }
