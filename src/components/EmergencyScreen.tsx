@@ -87,7 +87,7 @@ export default function EmergencyScreen() {
   };
 
   const { creating, after } = useFlow();
-  const saveAndContinue = () => { save(); after("business"); };
+  const saveAndContinue = () => { save(); after("done", "emergency"); };
 
   const addContact = () => {
     if (contacts.length >= MAX_CONTACTS) return;
@@ -386,7 +386,7 @@ export default function EmergencyScreen() {
         {/* Actions */}
         <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 10, paddingBottom: 20 }}>
           <button className="btn-primary" onClick={saveAndContinue}>{creating ? t("saveAndContinue") : (lang === "ar" ? "حفظ ورجوع" : "Save & back")}</button>
-          {creating && <button className="btn-ghost" onClick={() => setScreen("business")}>{t("skipNow")}</button>}
+          {creating && <button className="btn-ghost" onClick={() => after("done", "emergency")}>{t("skipNow")}</button>}
         </div>
       </div>
     </div>
