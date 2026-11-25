@@ -41,7 +41,22 @@ const navItems: { screen: Screen; icon: string; labelAr: string; labelEn: string
 ];
 
 export default function BottomNav() {
-  const { screen, setScreen, lang } = useApp();
+  const { screen, setScreen, lang, identities, activeIdentityId, setActiveIdentityId } = useApp();
+
+  const goSections = () => {
+    const id = activeIdentityId || identities[0]?.id;
+    if (!id) { setScreen("home"); return; }
+    setActiveIdentityId(id);
+    setScreen("identity-detail");
+  };
+  const sectionScreens = ["identity-detail", "emergency", "business", "events"];
+  const base = (sc: string) => navItems.find((i) => i.screen === sc)!;
+  const items: { key: string; icon: string; labelAr: string; labelEn: string; active: boolean; onClick: () => void }[] = [
+    { key: "home", icon: base("home").icon, labelAr: "الرئيسية", labelEn: "Home", active: screen === "home", onClick: () => setScreen("home") },
+    { key: "sections", icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>`, labelAr: "الأقسام", labelEn: "Sections", active: sectionScreens.includes(screen), onClick: goSections },
+    { key: "plus", icon: `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`, labelAr: "خدمات", labelEn: "Services", active: screen === "accessory", onClick: () => setScreen("accessory") },
+    { key: "settings", icon: base("settings").icon, labelAr: "الإعدادات", labelEn: "Settings", active: screen === "settings", onClick: () => setScreen("settings") },
+  ];
 
   return (
     <div style={{
@@ -58,13 +73,13 @@ export default function BottomNav() {
       paddingBottom: "env(safe-area-inset-bottom, 8px)",
       zIndex: 100,
     }}>
-      {navItems.filter((i) => ["home", "accessory", "settings"].includes(i.screen)).map((item) => {
-        const isActive = screen === item.screen || (item.screen === "home" && screen === "identity-detail");
+      {items.map((item) => {
+        const isActive = item.active;
         const label = lang === "ar" ? item.labelAr : item.labelEn;
         return (
           <button
-            key={item.screen}
-            onClick={() => setScreen(item.screen)}
+            key={item.key}
+            onClick={item.onClick}
             style={{
               flex: 1,
               display: "flex",
