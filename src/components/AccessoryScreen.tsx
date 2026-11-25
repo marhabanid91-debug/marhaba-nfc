@@ -258,7 +258,7 @@ export default function AccessoryScreen() {
           onToggle={() => toggle("services")}
         >
           {SERVICES.map((sv) => (
-            <button key={sv.title} onClick={() => window.open(serviceLink(sv.msg), "_blank", "noopener")} style={{
+            <button key={sv.title} onClick={() => window.open(sv.url || serviceLink(sv.msg), "_blank", "noopener")} style={{
               display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "12px 4px", background: "none",
               border: "none", borderBottom: "1px solid var(--border)", color: "var(--foreground)", fontFamily: "inherit",
               fontSize: 15, cursor: "pointer", textAlign: "start",
