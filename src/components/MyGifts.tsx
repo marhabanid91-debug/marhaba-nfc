@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import StatsBox from "./StatsBox";
 import { copyText, shareLink } from "../lib/share";
+import { COUNTRIES, splitPhone, joinPhone } from "../lib/countries";
 import { cleanWa, claimGift, loadMyGifts, setGiftLink, setGiftPromo, toEmbed, isTikTokUnsupported, giftItems, cleanPromo, GiftItem, GiftOffer, MyGift } from "../lib/gift";
 
 // قسم «أعمال وهدايا» داخل حساب المُهدي: تفعيل بطاقة هدية وتبديل رابطها
@@ -98,7 +99,10 @@ function GiftRow({
   const [followUrl, setFollowUrl] = useState(initPromo.follow?.url || "");
   const [followTitle, setFollowTitle] = useState(initPromo.follow?.title || "");
   const [offers, setOffers] = useState<GiftOffer[]>(initPromo.offers);
-  const [waInput, setWaInput] = useState(initPromo.wa || "");
+  const initPh = splitPhone(initPromo.wa || "");
+  const [waCc, setWaCc] = useState(initPh.cc);
+  const [waLocal, setWaLocal] = useState(initPh.local);
+  const waInput = joinPhone(waCc, waLocal);
   const hadPromo = !!(initPromo.follow || initPromo.offers.length || initPromo.wa);
   // بطاقة مصغّرة بعد الحفظ؛ تُفتح عند الضغط. الهدية الجديدة الفارغة تبدأ مفتوحة
   const hasContent = !!(g.gift_title || giftItems(g).length || g.gift_catalog || hadPromo);
@@ -284,13 +288,26 @@ function GiftRow({
         <div style={{ fontSize: 12, color: "var(--muted-foreground)", marginBottom: 8, lineHeight: 1.7 }}>
           رقمك أو رقم صاحب البراند. زر «تواصل فوري عبر واتساب» في العروض يفتح محادثة معه مباشرة.
         </div>
-        <input
-          value={waInput}
-          onChange={(e) => setWaInput(e.target.value)}
-          inputMode="tel"
-          placeholder="05xxxxxxxx أو 9665xxxxxxxx"
-          style={{ ...inputStyle, direction: "ltr", textAlign: "right" }}
-        />
+        <div style={{ display: "flex", gap: 8, direction: "ltr" }}>
+          <select
+            value={waCc}
+            onChange={(e) => setWaCc(e.target.value)}
+            aria-label="مفتاح الدولة"
+            style={{ ...inputStyle, width: "42%", flex: "none", direction: "rtl" }}
+          >
+            {COUNTRIES.map((c) => (
+              <option key={c.name} value={c.code}>{c.name} (+{c.code})</option>
+            ))}
+          </select>
+          <input
+            value={waLocal}
+            onChange={(e) => setWaLocal(e.target.value.replace(/[^0-9]/g, ""))}
+            inputMode="tel"
+            placeholder="5xxxxxxxx"
+            aria-label="رقم الواتساب بدون المفتاح"
+            style={{ ...inputStyle, flex: 1, minWidth: 0, direction: "ltr", textAlign: "left" }}
+          />
+        </div>
       </div>
 
       <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
