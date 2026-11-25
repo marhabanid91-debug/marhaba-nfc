@@ -19,7 +19,9 @@ export type Screen =
   | "card-scan"
   | "serial-gate"
   | "identity-detail"
-  | "company";
+  | "company"
+  | "create-choose"
+  | "create-more";
 
 export interface EmergencyContact {
   name: string;
