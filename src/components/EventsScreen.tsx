@@ -301,8 +301,8 @@ export default function EventsScreen() {
         </div>
 
         <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 10, paddingBottom: 20 }}>
-          <button className="btn-primary" onClick={() => { save(); after("done"); }}>{creating ? (lang === "ar" ? "حفظ وإنهاء ✓" : "Save & finish ✓") : (lang === "ar" ? "حفظ ورجوع" : "Save & back")}</button>
-          {creating && <button className="btn-ghost" onClick={finish}>{lang === "ar" ? "تخطّي وإنهاء" : "Skip & finish"}</button>}
+          <button className="btn-primary" onClick={() => { save(); after("done", "events"); }}>{creating ? (lang === "ar" ? "حفظ وإنهاء ✓" : "Save & finish ✓") : (lang === "ar" ? "حفظ ورجوع" : "Save & back")}</button>
+          {creating && <button className="btn-ghost" onClick={() => after("done", "events")}>{lang === "ar" ? "تخطّي" : "Skip"}</button>}
         </div>
       </div>
     </div>
